@@ -259,5 +259,56 @@ namespace UnitySkills
 
             return new { success = true, prefabPath, count = instances.Length, instances };
         }
+
+        [UnitySkill("prefab_edit_asset", "Edit a prefab asset directly without scene instantiation. Opens prefab in edit mode, executes operations, and saves. Use with component_add/component_set_property by passing the returned rootName.", TracksWorkflow = true)]
+        public static object PrefabEditAsset(string prefabPath, bool autoSave = true)
+        {
+            if (Validate.Required(prefabPath, "prefabPath") is object reqErr) return reqErr;
+
+            var prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (prefabAsset == null)
+                return new { error = $"Prefab not found: {prefabPath}" };
+
+            // Open prefab in Prefab Stage (isolated edit mode)
+            var prefabStage = UnityEditor.SceneManagement.PrefabStageUtility.OpenPrefab(prefabPath);
+            if (prefabStage == null)
+                return new { error = $"Failed to open prefab stage for: {prefabPath}" };
+
+            var root = prefabStage.prefabContentsRoot;
+
+            return new {
+                success = true,
+                prefabPath,
+                rootName = root.name,
+                rootInstanceId = root.GetInstanceID(),
+                autoSave,
+                childCount = root.transform.childCount,
+                children = Enumerable.Range(0, root.transform.childCount)
+                    .Select(i => root.transform.GetChild(i).name)
+                    .ToArray(),
+                hint = "Use component_add/component_set_property with the rootName to modify the prefab. Call prefab_save_and_close when done."
+            };
+        }
+
+        [UnitySkill("prefab_save_and_close", "Save changes to the currently open prefab stage and return to the scene.", TracksWorkflow = true)]
+        public static object PrefabSaveAndClose()
+        {
+            var prefabStage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
+            if (prefabStage == null)
+                return new { error = "No prefab stage is currently open" };
+
+            var prefabPath = prefabStage.assetPath;
+
+            // Save the prefab
+            PrefabUtility.SaveAsPrefabAsset(prefabStage.prefabContentsRoot, prefabPath);
+
+            // Close the prefab stage by going back to the previous scene
+            UnityEditor.SceneManagement.StageUtility.GoToMainStage();
+
+            return new {
+                success = true,
+                savedTo = prefabPath
+            };
+        }
     }
 }

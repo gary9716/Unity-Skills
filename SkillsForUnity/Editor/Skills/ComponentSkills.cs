@@ -246,11 +246,12 @@ namespace UnitySkills
             };
         }
 
-        [UnitySkill("component_set_property", "Set a property/field on a component. Supports Vector2/3/4, Color, references by name/path", TracksWorkflow = true)]
+        [UnitySkill("component_set_property", "Set a property/field on a component. Supports Vector2/3/4, Color, references by name/path, asset references by assetPath", TracksWorkflow = true)]
         public static object ComponentSetProperty(
-            string name = null, int instanceId = 0, string path = null, 
-            string componentType = null, string propertyName = null, 
-            string value = null, string referencePath = null, string referenceName = null)
+            string name = null, int instanceId = 0, string path = null,
+            string componentType = null, string propertyName = null,
+            string value = null, string referencePath = null, string referenceName = null,
+            string assetPath = null)
         {
             if (string.IsNullOrEmpty(componentType) || string.IsNullOrEmpty(propertyName))
                 return new { error = "componentType and propertyName are required" };
@@ -261,7 +262,7 @@ namespace UnitySkills
             var type = FindComponentType(componentType);
             if (type == null)
                 return new { error = $"Component type not found: {componentType}" };
-                
+
             var comp = go.GetComponent(type);
             if (comp == null)
                 return new { error = $"Component not found: {componentType}" };
@@ -283,8 +284,15 @@ namespace UnitySkills
                 var targetType = prop?.PropertyType ?? field.FieldType;
                 object converted;
 
-                // Handle reference types (Transform, GameObject, Component references)
-                if (!string.IsNullOrEmpty(referencePath) || !string.IsNullOrEmpty(referenceName))
+                // Handle asset references (prefabs, sprites, materials, etc.)
+                if (!string.IsNullOrEmpty(assetPath))
+                {
+                    converted = ResolveAssetReference(targetType, assetPath);
+                    if (converted == null)
+                        return new { error = $"Could not load asset at '{assetPath}' as {targetType.Name}" };
+                }
+                // Handle scene reference types (Transform, GameObject, Component references)
+                else if (!string.IsNullOrEmpty(referencePath) || !string.IsNullOrEmpty(referenceName))
                 {
                     converted = ResolveReference(targetType, referencePath, referenceName);
                     if (converted == null)
@@ -303,25 +311,25 @@ namespace UnitySkills
                     return new { error = $"Property {propertyName} is read-only" };
 
                 EditorUtility.SetDirty(comp);
-                
-                return new { 
-                    success = true, 
-                    gameObject = go.name, 
+
+                return new {
+                    success = true,
+                    gameObject = go.name,
                     component = componentType,
-                    property = propertyName, 
+                    property = propertyName,
                     valueSet = converted?.ToString() ?? "null",
                     valueType = targetType.Name
                 };
             }
             catch (System.Exception ex)
             {
-                return new { 
+                return new {
                     error = ex.Message,
                 };
             }
         }
 
-        [UnitySkill("component_set_property_batch", "Set properties on multiple components (Efficient). items: JSON array of {name, componentType, propertyName, value, referencePath, referenceName}", TracksWorkflow = true)]
+        [UnitySkill("component_set_property_batch", "Set properties on multiple components (Efficient). items: JSON array of {name, componentType, propertyName, value, referencePath, referenceName, assetPath}", TracksWorkflow = true)]
         public static object ComponentSetPropertyBatch(string items)
         {
             return BatchExecutor.Execute<BatchSetPropertyItem>(items, item =>
@@ -352,7 +360,13 @@ namespace UnitySkills
                 var targetType = prop?.PropertyType ?? field.FieldType;
                 object converted;
 
-                if (!string.IsNullOrEmpty(item.referencePath) || !string.IsNullOrEmpty(item.referenceName))
+                if (!string.IsNullOrEmpty(item.assetPath))
+                {
+                    converted = ResolveAssetReference(targetType, item.assetPath);
+                    if (converted == null)
+                        throw new System.Exception($"Could not load asset at '{item.assetPath}' as {targetType.Name}");
+                }
+                else if (!string.IsNullOrEmpty(item.referencePath) || !string.IsNullOrEmpty(item.referenceName))
                 {
                     converted = ResolveReference(targetType, item.referencePath, item.referenceName);
                     if (converted == null)
@@ -386,9 +400,10 @@ namespace UnitySkills
             public object value { get; set; }
             public string referencePath { get; set; }
             public string referenceName { get; set; }
+            public string assetPath { get; set; }
         }
 
-        [UnitySkill("component_get_properties", "Get all properties of a component (supports name/instanceId/path)")]
+        [UnitySkill("component_get_properties", "Get all properties of a component. Always includes [SerializeField] fields. Set includePrivate=true for all private members.")]
         public static object ComponentGetProperties(string name = null, int instanceId = 0, string path = null, string componentType = null, bool includePrivate = false)
         {
             if (Validate.Required(componentType, "componentType") is object err) return err;
@@ -399,7 +414,7 @@ namespace UnitySkills
             var type = FindComponentType(componentType);
             if (type == null)
                 return new { error = $"Component type not found: {componentType}" };
-                
+
             var comp = go.GetComponent(type);
             if (comp == null)
                 return new { error = $"Component not found: {componentType}" };
@@ -412,45 +427,56 @@ namespace UnitySkills
                 .Where(p => p.CanRead && !p.GetIndexParameters().Any())
                 .Select(p =>
                 {
-                    try 
-                    { 
+                    try
+                    {
                         var val = p.GetValue(comp);
-                        return new { 
-                            name = p.Name, 
-                            type = p.PropertyType.Name, 
+                        return new {
+                            name = p.Name,
+                            type = p.PropertyType.Name,
                             fullType = p.PropertyType.FullName,
                             value = FormatValue(val),
                             canWrite = p.CanWrite
-                        }; 
+                        };
                     }
                     catch { return new { name = p.Name, type = p.PropertyType.Name, fullType = p.PropertyType.FullName, value = "(error reading)", canWrite = p.CanWrite }; }
                 })
                 .ToArray();
 
-            var fields = type.GetFields(bindingFlags)
+            // Always include [SerializeField] private fields, even without includePrivate flag
+            var allFields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            var filteredFields = allFields
+                .Where(f =>
+                {
+                    if (f.IsPublic) return true;
+                    if (f.GetCustomAttribute<SerializeField>() != null) return true;
+                    if (includePrivate) return true;
+                    return false;
+                })
                 .Select(f =>
                 {
-                    try 
-                    { 
+                    try
+                    {
                         var val = f.GetValue(comp);
-                        return new { 
-                            name = f.Name, 
-                            type = f.FieldType.Name, 
+                        var isSerializable = f.IsPublic || f.GetCustomAttribute<SerializeField>() != null;
+                        return new {
+                            name = f.Name,
+                            type = f.FieldType.Name,
                             fullType = f.FieldType.FullName,
-                            value = FormatValue(val),
-                            isSerializable = f.IsPublic || f.GetCustomAttribute<SerializeField>() != null
-                        }; 
+                            value = FormatValueDetailed(val),
+                            isSerializable,
+                            hasSerializeFieldAttr = f.GetCustomAttribute<SerializeField>() != null
+                        };
                     }
-                    catch { return new { name = f.Name, type = f.FieldType.Name, fullType = f.FieldType.FullName, value = "(error reading)", isSerializable = false }; }
+                    catch { return new { name = f.Name, type = f.FieldType.Name, fullType = f.FieldType.FullName, value = "(error reading)", isSerializable = false, hasSerializeFieldAttr = false }; }
                 })
                 .ToArray();
 
-            return new { 
-                gameObject = go.name, 
-                component = componentType, 
+            return new {
+                gameObject = go.name,
+                component = componentType,
                 fullTypeName = type.FullName,
                 properties = props,
-                fields = fields
+                fields = filteredFields
             };
         }
 
@@ -803,6 +829,27 @@ namespace UnitySkills
             return null;
         }
 
+        /// <summary>
+        /// Resolve a reference to a Unity asset by its project path.
+        /// Supports GameObject (prefabs), Sprite, Material, Texture, AudioClip, ScriptableObject, etc.
+        /// </summary>
+        private static object ResolveAssetReference(System.Type targetType, string assetPath)
+        {
+            // For GameObject fields, load the prefab directly
+            if (targetType == typeof(GameObject))
+                return AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+
+            // For Sprite, try loading as Sprite first (handles multi-sprite textures)
+            if (targetType == typeof(Sprite))
+                return AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+
+            // For any UnityEngine.Object subtype, load with the target type
+            if (typeof(UnityEngine.Object).IsAssignableFrom(targetType))
+                return AssetDatabase.LoadAssetAtPath(assetPath, targetType);
+
+            return null;
+        }
+
         #endregion
 
         #region Helpers
@@ -817,6 +864,28 @@ namespace UnitySkills
             if (val is Color c) return $"({c.r}, {c.g}, {c.b}, {c.a})";
             if (val is UnityEngine.Object obj) return obj.name;
             return val.ToString();
+        }
+
+        /// <summary>
+        /// Enhanced FormatValue that includes asset path for UnityEngine.Object references.
+        /// </summary>
+        private static string FormatValueDetailed(object val)
+        {
+            if (val == null) return "null";
+            if (val is UnityEngine.Object obj)
+            {
+                if (obj == null) return "null (missing ref)";
+                var assetPath = AssetDatabase.GetAssetPath(obj);
+                if (!string.IsNullOrEmpty(assetPath))
+                    return $"{obj.name} [{assetPath}]";
+                // Scene object — try to get hierarchy path
+                if (obj is GameObject go)
+                    return $"{go.name} [scene:{GameObjectFinder.GetPath(go)}]";
+                if (obj is Component comp && comp.gameObject != null)
+                    return $"{comp.gameObject.name}/{comp.GetType().Name} [scene:{GameObjectFinder.GetPath(comp.gameObject)}]";
+                return obj.name;
+            }
+            return FormatValue(val);
         }
 
         /// <summary>

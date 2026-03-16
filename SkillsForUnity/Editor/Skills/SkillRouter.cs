@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityEditor;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -15,6 +16,15 @@ namespace UnitySkills
     {
         private static volatile Dictionary<string, SkillInfo> _skills;
         private static volatile bool _initialized;
+
+        // Force skill re-discovery after every domain reload
+        [InitializeOnLoadMethod]
+        static void OnDomainReload()
+        {
+            _initialized = false;
+            _skills = null;
+            _cachedManifest = null;
+        }
         private static string _cachedManifest;
         private static readonly object _initLock = new object();
 
@@ -139,7 +149,17 @@ namespace UnitySkills
                     var p = ps[i];
                     if (args.TryGetValue(p.Name, StringComparison.OrdinalIgnoreCase, out var token))
                     {
-                        invoke[i] = token.ToObject(p.ParameterType);
+                        // When a JSON array/object token needs to go into a string parameter
+                        // (e.g. batch skills that accept items as a JSON string), serialize it.
+                        if (p.ParameterType == typeof(string) &&
+                            (token.Type == JTokenType.Array || token.Type == JTokenType.Object))
+                        {
+                            invoke[i] = token.ToString(Formatting.None);
+                        }
+                        else
+                        {
+                            invoke[i] = token.ToObject(p.ParameterType);
+                        }
                     }
                     else if (p.HasDefaultValue)
                     {
