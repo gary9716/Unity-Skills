@@ -405,6 +405,141 @@ namespace UnitySkills
 
         #endregion
 
+        #region GameObject Queries
+
+        [UnitySkill("interact_get_field", "Read a field value from a MonoBehaviour (supports SerializeField via reflection)")]
+        public static object GetField(string name = null, int instanceId = 0, string fieldName = null, string componentType = null)
+        {
+            var (go, err) = FindTarget(name, instanceId);
+            if (err != null) return err;
+
+            if (string.IsNullOrEmpty(fieldName))
+                return new { error = "fieldName is required" };
+
+            // If componentType specified, use it; otherwise search all MonoBehaviours
+            if (!string.IsNullOrEmpty(componentType))
+            {
+                var type = ComponentSkills.FindComponentType(componentType);
+                if (type == null)
+                    return new { error = $"Component type not found: {componentType}" };
+                var comp = go.GetComponent(type);
+                if (comp == null)
+                    return new { error = $"No {componentType} on '{go.name}'" };
+                return GetMemberValue(comp, type, fieldName);
+            }
+
+            // Search all MonoBehaviours on the GameObject
+            foreach (var comp in go.GetComponents<MonoBehaviour>())
+            {
+                if (comp == null) continue;
+                var result = GetMemberValue(comp, comp.GetType(), fieldName);
+                var successProp = result.GetType().GetProperty("success");
+                if (successProp != null && (bool)successProp.GetValue(result))
+                {
+                    return new
+                    {
+                        success = true,
+                        target = go.name,
+                        component = comp.GetType().Name,
+                        property = fieldName,
+                        value = result.GetType().GetProperty("value")?.GetValue(result),
+                        valueType = result.GetType().GetProperty("valueType")?.GetValue(result)
+                    };
+                }
+            }
+
+            return new { error = $"Field '{fieldName}' not found on any component of '{go.name}'" };
+        }
+
+        [UnitySkill("interact_get_position", "Get Transform position, rotation, and scale")]
+        public static object GetPosition(string name = null, int instanceId = 0)
+        {
+            var (go, err) = FindTarget(name, instanceId);
+            if (err != null) return err;
+
+            var t = go.transform;
+            return new
+            {
+                success = true,
+                target = go.name,
+                position = new { x = t.position.x, y = t.position.y, z = t.position.z },
+                localPosition = new { x = t.localPosition.x, y = t.localPosition.y, z = t.localPosition.z },
+                rotation = new { x = t.eulerAngles.x, y = t.eulerAngles.y, z = t.eulerAngles.z },
+                scale = new { x = t.localScale.x, y = t.localScale.y, z = t.localScale.z }
+            };
+        }
+
+        [UnitySkill("interact_get_children", "List children of a GameObject")]
+        public static object GetChildren(string name = null, int instanceId = 0)
+        {
+            var (go, err) = FindTarget(name, instanceId);
+            if (err != null) return err;
+
+            var children = new List<object>();
+            foreach (Transform child in go.transform)
+            {
+                children.Add(new
+                {
+                    name = child.name,
+                    instanceId = child.gameObject.GetInstanceID(),
+                    active = child.gameObject.activeSelf
+                });
+            }
+
+            return new { success = true, target = go.name, childCount = children.Count, children };
+        }
+
+        [UnitySkill("interact_find_by_tag", "Find GameObjects by tag")]
+        public static object FindByTag(string tag = null)
+        {
+            if (!EditorApplication.isPlaying)
+                return new { error = "Not in Play Mode. Call interact_enter_playmode first." };
+
+            if (string.IsNullOrEmpty(tag))
+                return new { error = "tag is required" };
+
+            try
+            {
+                var objects = GameObject.FindGameObjectsWithTag(tag);
+                return new
+                {
+                    success = true,
+                    tag,
+                    count = objects.Length,
+                    objects = objects.Select(go => new { name = go.name, instanceId = go.GetInstanceID() }).ToArray()
+                };
+            }
+            catch (UnityException)
+            {
+                return new { error = $"Tag '{tag}' is not defined in TagManager" };
+            }
+        }
+
+        [UnitySkill("interact_find_by_component", "Find all GameObjects that have a specific component")]
+        public static object FindByComponent(string componentType = null)
+        {
+            if (!EditorApplication.isPlaying)
+                return new { error = "Not in Play Mode. Call interact_enter_playmode first." };
+
+            if (string.IsNullOrEmpty(componentType))
+                return new { error = "componentType is required" };
+
+            var type = ComponentSkills.FindComponentType(componentType);
+            if (type == null)
+                return new { error = $"Component type not found: {componentType}" };
+
+            var allObjects = FindHelper.FindAll<GameObject>(includeInactive: true);
+            var matches = allObjects
+                .Where(go => go.GetComponent(type) != null)
+                .Take(50)
+                .Select(go => new { name = go.name, instanceId = go.GetInstanceID(), active = go.activeInHierarchy })
+                .ToArray();
+
+            return new { success = true, componentType, count = matches.Length, objects = matches };
+        }
+
+        #endregion
+
         #region Helpers
 
         private static object SnapshotGameObject(GameObject go, int depth, int maxDepth)
