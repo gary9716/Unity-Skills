@@ -98,6 +98,181 @@ namespace UnitySkills
 
         #endregion
 
+        #region UGUI Interaction
+
+        [UnitySkill("interact_click", "Simulate clicking a UI element (Button, etc.)")]
+        public static object Click(string name = null, int instanceId = 0)
+        {
+            var (go, err) = FindTarget(name, instanceId);
+            if (err != null) return err;
+
+            // Try Button.onClick first (most common case)
+            var button = go.GetComponent<Button>();
+            if (button != null && button.onClick != null)
+            {
+                button.onClick.Invoke();
+                return new { success = true, target = go.name, @event = "click", method = "Button.onClick" };
+            }
+
+            // Fallback: ExecuteEvents for generic IPointerClickHandler
+            var pointerData = new PointerEventData(EventSystem.current)
+            {
+                pointerId = -1,
+                position = GetScreenPosition(go)
+            };
+            ExecuteEvents.Execute<IPointerClickHandler>(go, pointerData, ExecuteEvents.pointerClickHandler);
+
+            return new { success = true, target = go.name, @event = "click", method = "ExecuteEvents" };
+        }
+
+        [UnitySkill("interact_submit_text", "Simulate entering text into an InputField and submitting")]
+        public static object SubmitText(string name = null, int instanceId = 0, string text = "")
+        {
+            var (go, err) = FindTarget(name, instanceId);
+            if (err != null) return err;
+
+            // Try legacy InputField first
+            var inputField = go.GetComponent<InputField>();
+            if (inputField != null)
+            {
+                inputField.text = text;
+                inputField.onEndEdit?.Invoke(text);
+                return new { success = true, target = go.name, @event = "submit_text", text, fieldType = "InputField" };
+            }
+
+            // Try TMP_InputField
+            var tmpInput = go.GetComponent("TMPro.TMP_InputField") as MonoBehaviour;
+            if (tmpInput != null)
+            {
+                var textProp = tmpInput.GetType().GetProperty("text");
+                var onEndEditProp = tmpInput.GetType().GetProperty("onEndEdit");
+                if (textProp != null) textProp.SetValue(tmpInput, text);
+
+                var onEndEdit = onEndEditProp?.GetValue(tmpInput);
+                if (onEndEdit != null)
+                {
+                    var invokeMethod = onEndEdit.GetType().GetMethod("Invoke", new[] { typeof(string) });
+                    invokeMethod?.Invoke(onEndEdit, new object[] { text });
+                }
+                return new { success = true, target = go.name, @event = "submit_text", text, fieldType = "TMP_InputField" };
+            }
+
+            return new { error = $"No InputField or TMP_InputField found on '{go.name}'" };
+        }
+
+        [UnitySkill("interact_toggle", "Set Toggle state and trigger onValueChanged")]
+        public static object Toggle(string name = null, int instanceId = 0, bool isOn = true)
+        {
+            var (go, err) = FindTarget(name, instanceId);
+            if (err != null) return err;
+
+            var toggle = go.GetComponent<Toggle>();
+            if (toggle == null)
+                return new { error = $"No Toggle found on '{go.name}'" };
+
+            toggle.isOn = isOn;
+            return new { success = true, target = go.name, @event = "toggle", isOn };
+        }
+
+        [UnitySkill("interact_slider_set", "Set Slider value and trigger onValueChanged")]
+        public static object SliderSet(string name = null, int instanceId = 0, float value = 0f)
+        {
+            var (go, err) = FindTarget(name, instanceId);
+            if (err != null) return err;
+
+            var slider = go.GetComponent<Slider>();
+            if (slider == null)
+                return new { error = $"No Slider found on '{go.name}'" };
+
+            slider.value = value;
+            return new { success = true, target = go.name, @event = "slider_set", value, minValue = slider.minValue, maxValue = slider.maxValue };
+        }
+
+        [UnitySkill("interact_dropdown_set", "Set Dropdown selected index and trigger onValueChanged")]
+        public static object DropdownSet(string name = null, int instanceId = 0, int index = 0)
+        {
+            var (go, err) = FindTarget(name, instanceId);
+            if (err != null) return err;
+
+            var dropdown = go.GetComponent<Dropdown>();
+            if (dropdown != null)
+            {
+                if (index < 0 || index >= dropdown.options.Count)
+                    return new { error = $"Index {index} out of range. Dropdown has {dropdown.options.Count} options." };
+                dropdown.value = index;
+                return new { success = true, target = go.name, @event = "dropdown_set", index, selectedText = dropdown.options[index].text };
+            }
+
+            // Try TMP_Dropdown
+            var tmpDropdown = go.GetComponent("TMPro.TMP_Dropdown") as MonoBehaviour;
+            if (tmpDropdown != null)
+            {
+                var optionsProp = tmpDropdown.GetType().GetProperty("options");
+                var optionsList = optionsProp?.GetValue(tmpDropdown) as IList;
+                if (optionsList != null && (index < 0 || index >= optionsList.Count))
+                    return new { error = $"Index {index} out of range. TMP_Dropdown has {optionsList.Count} options." };
+
+                var valueProp = tmpDropdown.GetType().GetProperty("value");
+                if (valueProp != null) valueProp.SetValue(tmpDropdown, index);
+
+                return new { success = true, target = go.name, @event = "dropdown_set", index, dropdownType = "TMP_Dropdown" };
+            }
+
+            return new { error = $"No Dropdown or TMP_Dropdown found on '{go.name}'" };
+        }
+
+        [UnitySkill("interact_pointer_event", "Send a pointer event to a UI element")]
+        public static object PointerEvent(string name = null, int instanceId = 0, string eventType = "Click")
+        {
+            var (go, err) = FindTarget(name, instanceId);
+            if (err != null) return err;
+
+            var pointerData = new PointerEventData(EventSystem.current)
+            {
+                pointerId = -1,
+                position = GetScreenPosition(go)
+            };
+
+            switch (eventType.ToLower())
+            {
+                case "enter":
+                    ExecuteEvents.Execute<IPointerEnterHandler>(go, pointerData, ExecuteEvents.pointerEnterHandler);
+                    break;
+                case "exit":
+                    ExecuteEvents.Execute<IPointerExitHandler>(go, pointerData, ExecuteEvents.pointerExitHandler);
+                    break;
+                case "down":
+                    ExecuteEvents.Execute<IPointerDownHandler>(go, pointerData, ExecuteEvents.pointerDownHandler);
+                    break;
+                case "up":
+                    ExecuteEvents.Execute<IPointerUpHandler>(go, pointerData, ExecuteEvents.pointerUpHandler);
+                    break;
+                case "click":
+                    ExecuteEvents.Execute<IPointerClickHandler>(go, pointerData, ExecuteEvents.pointerClickHandler);
+                    break;
+                default:
+                    return new { error = $"Unknown pointer event type: {eventType}. Use: Enter, Exit, Down, Up, Click" };
+            }
+
+            return new { success = true, target = go.name, @event = "pointer_" + eventType.ToLower() };
+        }
+
+        private static Vector2 GetScreenPosition(GameObject go)
+        {
+            var rectTransform = go.GetComponent<RectTransform>();
+            if (rectTransform != null && rectTransform.parent != null)
+            {
+                var canvas = go.GetComponentInParent<Canvas>();
+                if (canvas != null && canvas.renderMode != RenderMode.WorldSpace)
+                {
+                    return rectTransform.position;
+                }
+            }
+            return Vector2.zero;
+        }
+
+        #endregion
+
         #region Helpers
 
         private static object SnapshotGameObject(GameObject go, int depth, int maxDepth)
