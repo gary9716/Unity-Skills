@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace UnitySkills
 {
@@ -72,6 +73,7 @@ namespace UnitySkills
         {
             if (!_waitResults.TryGetValue(jobId, out var result))
                 return new { jobId, status = "waiting" };
+            _waitResults.Remove(jobId); // One-shot: remove after reading
             return new { jobId, result.Status, result.FramesWaited, elapsedMs = result.ElapsedMs };
         }
 
@@ -141,20 +143,24 @@ namespace UnitySkills
             }
 
             // Try TMP_InputField
-            var tmpInput = go.GetComponent("TMPro.TMP_InputField") as MonoBehaviour;
-            if (tmpInput != null)
+            var tmpInputType = ComponentSkills.FindComponentType("TMP_InputField");
+            if (tmpInputType != null)
             {
-                var textProp = tmpInput.GetType().GetProperty("text");
-                var onEndEditProp = tmpInput.GetType().GetProperty("onEndEdit");
-                if (textProp != null) textProp.SetValue(tmpInput, text);
-
-                var onEndEdit = onEndEditProp?.GetValue(tmpInput);
-                if (onEndEdit != null)
+                var tmpInput = go.GetComponent(tmpInputType) as MonoBehaviour;
+                if (tmpInput != null)
                 {
-                    var invokeMethod = onEndEdit.GetType().GetMethod("Invoke", new[] { typeof(string) });
-                    invokeMethod?.Invoke(onEndEdit, new object[] { text });
+                    var textProp = tmpInput.GetType().GetProperty("text");
+                    var onEndEditProp = tmpInput.GetType().GetProperty("onEndEdit");
+                    if (textProp != null) textProp.SetValue(tmpInput, text);
+
+                    var onEndEdit = onEndEditProp?.GetValue(tmpInput);
+                    if (onEndEdit != null)
+                    {
+                        var invokeMethod = onEndEdit.GetType().GetMethod("Invoke", new[] { typeof(string) });
+                        invokeMethod?.Invoke(onEndEdit, new object[] { text });
+                    }
+                    return new { success = true, target = go.name, @event = "submit_text", text, fieldType = "TMP_InputField" };
                 }
-                return new { success = true, target = go.name, @event = "submit_text", text, fieldType = "TMP_InputField" };
             }
 
             return new { error = $"No InputField or TMP_InputField found on '{go.name}'" };
@@ -204,8 +210,11 @@ namespace UnitySkills
             }
 
             // Try TMP_Dropdown
-            var tmpDropdown = go.GetComponent("TMPro.TMP_Dropdown") as MonoBehaviour;
-            if (tmpDropdown != null)
+            var tmpDropdownType = ComponentSkills.FindComponentType("TMP_Dropdown");
+            if (tmpDropdownType != null)
+            {
+                var tmpDropdown = go.GetComponent(tmpDropdownType) as MonoBehaviour;
+                if (tmpDropdown != null)
             {
                 var optionsProp = tmpDropdown.GetType().GetProperty("options");
                 var optionsList = optionsProp?.GetValue(tmpDropdown) as IList;
@@ -216,6 +225,7 @@ namespace UnitySkills
                 if (valueProp != null) valueProp.SetValue(tmpDropdown, index);
 
                 return new { success = true, target = go.name, @event = "dropdown_set", index, dropdownType = "TMP_Dropdown" };
+                }
             }
 
             return new { error = $"No Dropdown or TMP_Dropdown found on '{go.name}'" };
@@ -287,11 +297,15 @@ namespace UnitySkills
                 return new { success = true, target = go.name, text = text.text, textType = "Text" };
 
             // Try TMP_Text
-            var tmpText = go.GetComponent("TMPro.TMP_Text") as MonoBehaviour;
-            if (tmpText != null)
+            var tmpTextType = ComponentSkills.FindComponentType("TMP_Text");
+            if (tmpTextType != null)
             {
-                var textProp = tmpText.GetType().GetProperty("text");
-                return new { success = true, target = go.name, text = textProp?.GetValue(tmpText)?.ToString(), textType = "TMP_Text" };
+                var tmpText = go.GetComponent(tmpTextType) as MonoBehaviour;
+                if (tmpText != null)
+                {
+                    var textProp = tmpText.GetType().GetProperty("text");
+                    return new { success = true, target = go.name, text = textProp?.GetValue(tmpText)?.ToString(), textType = "TMP_Text" };
+                }
             }
 
             return new { error = $"No Text or TMP_Text found on '{go.name}'" };
@@ -556,7 +570,7 @@ namespace UnitySkills
             {
                 if (comp == null) continue;
 
-                var method = comp.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.Instance);
+                var method = comp.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 if (method == null) continue;
 
                 try
@@ -570,7 +584,7 @@ namespace UnitySkills
                     }
                     else if (!string.IsNullOrEmpty(args))
                     {
-                        var argArray = Newtonsoft.Json.JsonConvert.DeserializeObject<object[]>(args);
+                        var argArray = JsonConvert.DeserializeObject<object[]>(args);
                         invokeArgs = new object[parameters.Length];
                         for (int i = 0; i < parameters.Length && i < argArray.Length; i++)
                             invokeArgs[i] = ComponentSkills.ConvertValue(argArray[i]?.ToString(), parameters[i].ParameterType);
@@ -628,7 +642,8 @@ namespace UnitySkills
             {
                 if (comp == null) continue;
                 var field = comp.GetType().GetField(fieldName, flags);
-                if (field != null)
+                var prop = comp.GetType().GetProperty(fieldName, flags);
+                if (field != null || prop != null)
                     return SetMemberValue(comp, comp.GetType(), fieldName, value);
             }
 
