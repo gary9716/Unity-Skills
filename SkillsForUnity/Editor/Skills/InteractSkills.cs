@@ -273,6 +273,138 @@ namespace UnitySkills
 
         #endregion
 
+        #region UI State Queries
+
+        [UnitySkill("interact_get_text", "Get text content from a Text or TMP_Text element")]
+        public static object GetText(string name = null, int instanceId = 0)
+        {
+            var (go, err) = FindTarget(name, instanceId);
+            if (err != null) return err;
+
+            // Try legacy Text
+            var text = go.GetComponent<Text>();
+            if (text != null)
+                return new { success = true, target = go.name, text = text.text, textType = "Text" };
+
+            // Try TMP_Text
+            var tmpText = go.GetComponent("TMPro.TMP_Text") as MonoBehaviour;
+            if (tmpText != null)
+            {
+                var textProp = tmpText.GetType().GetProperty("text");
+                return new { success = true, target = go.name, text = textProp?.GetValue(tmpText)?.ToString(), textType = "TMP_Text" };
+            }
+
+            return new { error = $"No Text or TMP_Text found on '{go.name}'" };
+        }
+
+        [UnitySkill("interact_get_active", "Get active state of a GameObject")]
+        public static object GetActive(string name = null, int instanceId = 0)
+        {
+            var (go, err) = FindTarget(name, instanceId);
+            if (err != null) return err;
+
+            return new { success = true, target = go.name, activeSelf = go.activeSelf, activeInHierarchy = go.activeInHierarchy };
+        }
+
+        [UnitySkill("interact_get_rect", "Get RectTransform position and size")]
+        public static object GetRect(string name = null, int instanceId = 0)
+        {
+            var (go, err) = FindTarget(name, instanceId);
+            if (err != null) return err;
+
+            var rectTransform = go.GetComponent<RectTransform>();
+            if (rectTransform == null)
+                return new { error = $"No RectTransform on '{go.name}'" };
+
+            return new
+            {
+                success = true,
+                target = go.name,
+                anchoredPosition = FormatVector2(rectTransform.anchoredPosition),
+                sizeDelta = FormatVector2(rectTransform.sizeDelta),
+                anchorMin = FormatVector2(rectTransform.anchorMin),
+                anchorMax = FormatVector2(rectTransform.anchorMax),
+                pivot = FormatVector2(rectTransform.pivot),
+                offsetMin = FormatVector2(rectTransform.offsetMin),
+                offsetMax = FormatVector2(rectTransform.offsetMax)
+            };
+        }
+
+        [UnitySkill("interact_get_component_prop", "Get a property value from a component")]
+        public static object GetComponentProp(string name = null, int instanceId = 0, string component = null, string property = null)
+        {
+            var (go, err) = FindTarget(name, instanceId);
+            if (err != null) return err;
+
+            if (string.IsNullOrEmpty(component) || string.IsNullOrEmpty(property))
+                return new { error = "component and property are required" };
+
+            var type = ComponentSkills.FindComponentType(component);
+            if (type == null)
+                return new { error = $"Component type not found: {component}" };
+
+            var comp = go.GetComponent(type);
+            if (comp == null)
+                return new { error = $"No {component} on '{go.name}'" };
+
+            return GetMemberValue(comp, type, property);
+        }
+
+        [UnitySkill("interact_get_color", "Get the color of a Graphic (Image, Text, etc.)")]
+        public static object GetColor(string name = null, int instanceId = 0)
+        {
+            var (go, err) = FindTarget(name, instanceId);
+            if (err != null) return err;
+
+            var graphic = go.GetComponent<Graphic>();
+            if (graphic == null)
+                return new { error = $"No Graphic component on '{go.name}'" };
+
+            var c = graphic.color;
+            return new { success = true, target = go.name, r = c.r, g = c.g, b = c.b, a = c.a, hex = ColorUtility.ToHtmlStringRGBA(c) };
+        }
+
+        [UnitySkill("interact_get_interactable", "Get interactable state of a Selectable")]
+        public static object GetInteractable(string name = null, int instanceId = 0)
+        {
+            var (go, err) = FindTarget(name, instanceId);
+            if (err != null) return err;
+
+            var selectable = go.GetComponent<Selectable>();
+            if (selectable == null)
+                return new { error = $"No Selectable component on '{go.name}'" };
+
+            return new { success = true, target = go.name, interactable = selectable.interactable, enabled = selectable.enabled };
+        }
+
+        [UnitySkill("interact_get_toggle_state", "Get Toggle isOn value")]
+        public static object GetToggleState(string name = null, int instanceId = 0)
+        {
+            var (go, err) = FindTarget(name, instanceId);
+            if (err != null) return err;
+
+            var toggle = go.GetComponent<Toggle>();
+            if (toggle == null)
+                return new { error = $"No Toggle on '{go.name}'" };
+
+            return new { success = true, target = go.name, isOn = toggle.isOn };
+        }
+
+        [UnitySkill("interact_get_slider_value", "Get Slider value")]
+        public static object GetSliderValue(string name = null, int instanceId = 0)
+        {
+            var (go, err) = FindTarget(name, instanceId);
+            if (err != null) return err;
+
+            var slider = go.GetComponent<Slider>();
+            if (slider == null)
+                return new { error = $"No Slider on '{go.name}'" };
+
+            return new { success = true, target = go.name, value = slider.value, minValue = slider.minValue, maxValue = slider.maxValue };
+        }
+
+        #endregion
+
         #region Helpers
 
         private static object SnapshotGameObject(GameObject go, int depth, int maxDepth)
