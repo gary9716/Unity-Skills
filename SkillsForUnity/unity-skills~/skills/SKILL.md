@@ -48,6 +48,7 @@ This folder contains detailed documentation for each skill module. For quick ref
 | [sample](./sample/SKILL.md) | Basic test skills | No |
 | [debug](./debug/SKILL.md) | Error checking and diagnostics | No |
 | [test](./test/SKILL.md) | Unity Test Runner | No |
+| [interact](./interact/SKILL.md) | Playwright-style interaction testing | No |
 | [bookmark](./bookmark/SKILL.md) | Scene View bookmarks | No |
 | [history](./history/SKILL.md) | Undo/redo history | No |
 | [scriptableobject](./scriptableobject/SKILL.md) | ScriptableObject management | No |
@@ -93,5 +94,5 @@ unity_skills.call_skill("gameobject_create_batch",
 
 - Unity REST skills: 490
 - Advisory design modules: 13
-- Core runtime modules: 37
-- Total documented module folders: 50
+- Core runtime modules: 38
+- Total documented module folders: 51
