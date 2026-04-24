@@ -540,6 +540,153 @@ namespace UnitySkills
 
         #endregion
 
+        #region MonoBehaviour Interaction
+
+        [UnitySkill("interact_invoke_method", "Invoke a public method on a MonoBehaviour")]
+        public static object InvokeMethod(string name = null, int instanceId = 0, string methodName = null, string args = null)
+        {
+            var (go, err) = FindTarget(name, instanceId);
+            if (err != null) return err;
+
+            if (string.IsNullOrEmpty(methodName))
+                return new { error = "methodName is required" };
+
+            // Search all MonoBehaviours for the method
+            foreach (var comp in go.GetComponents<MonoBehaviour>())
+            {
+                if (comp == null) continue;
+
+                var method = comp.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.Instance);
+                if (method == null) continue;
+
+                try
+                {
+                    var parameters = method.GetParameters();
+                    object[] invokeArgs;
+
+                    if (parameters.Length == 0)
+                    {
+                        invokeArgs = Array.Empty<object>();
+                    }
+                    else if (!string.IsNullOrEmpty(args))
+                    {
+                        var argArray = Newtonsoft.Json.JsonConvert.DeserializeObject<object[]>(args);
+                        invokeArgs = new object[parameters.Length];
+                        for (int i = 0; i < parameters.Length && i < argArray.Length; i++)
+                            invokeArgs[i] = ComponentSkills.ConvertValue(argArray[i]?.ToString(), parameters[i].ParameterType);
+                    }
+                    else
+                    {
+                        invokeArgs = parameters.Select(p => p.HasDefaultValue ? p.DefaultValue : p.ParameterType.IsValueType ? Activator.CreateInstance(p.ParameterType) : null).ToArray();
+                    }
+
+                    var result = method.Invoke(comp, invokeArgs);
+                    return new
+                    {
+                        success = true,
+                        target = go.name,
+                        component = comp.GetType().Name,
+                        method = methodName,
+                        returnValue = result?.ToString() ?? "void"
+                    };
+                }
+                catch (TargetInvocationException tie)
+                {
+                    return new { error = $"Method {methodName} threw: {tie.InnerException?.Message ?? tie.Message}" };
+                }
+                catch (Exception ex)
+                {
+                    return new { error = $"Error invoking {methodName}: {ex.Message}" };
+                }
+            }
+
+            return new { error = $"Method '{methodName}' not found on any component of '{go.name}'" };
+        }
+
+        [UnitySkill("interact_set_field", "Set a field value on a MonoBehaviour (supports SerializeField)")]
+        public static object SetField(string name = null, int instanceId = 0, string fieldName = null, string value = null, string componentType = null)
+        {
+            var (go, err) = FindTarget(name, instanceId);
+            if (err != null) return err;
+
+            if (string.IsNullOrEmpty(fieldName))
+                return new { error = "fieldName is required" };
+
+            const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+
+            if (!string.IsNullOrEmpty(componentType))
+            {
+                var type = ComponentSkills.FindComponentType(componentType);
+                if (type == null) return new { error = $"Component type not found: {componentType}" };
+                var comp = go.GetComponent(type);
+                if (comp == null) return new { error = $"No {componentType} on '{go.name}'" };
+                return SetMemberValue(comp, type, fieldName, value);
+            }
+
+            // Search all MonoBehaviours
+            foreach (var comp in go.GetComponents<MonoBehaviour>())
+            {
+                if (comp == null) continue;
+                var field = comp.GetType().GetField(fieldName, flags);
+                if (field != null)
+                    return SetMemberValue(comp, comp.GetType(), fieldName, value);
+            }
+
+            return new { error = $"Field '{fieldName}' not found on any component of '{go.name}'" };
+        }
+
+        [UnitySkill("interact_send_message", "Send a message to a GameObject (calls named method on all components)")]
+        public static object SendMessage(string name = null, int instanceId = 0, string methodName = null, string value = null)
+        {
+            var (go, err) = FindTarget(name, instanceId);
+            if (err != null) return err;
+
+            if (string.IsNullOrEmpty(methodName))
+                return new { error = "methodName is required" };
+
+            var options = string.IsNullOrEmpty(value) ? SendMessageOptions.DontRequireReceiver : SendMessageOptions.RequireReceiver;
+
+            if (!string.IsNullOrEmpty(value))
+                go.SendMessage(methodName, value, options);
+            else
+                go.SendMessage(methodName, options);
+
+            return new { success = true, target = go.name, method = methodName, value };
+        }
+
+        private static object SetMemberValue(Component comp, Type type, string fieldName, string value)
+        {
+            const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+
+            var prop = type.GetProperty(fieldName, flags);
+            if (prop != null && prop.CanWrite)
+            {
+                try
+                {
+                    var converted = ComponentSkills.ConvertValue(value, prop.PropertyType);
+                    prop.SetValue(comp, converted);
+                    return new { success = true, target = comp.gameObject.name, component = type.Name, field = fieldName, valueSet = converted?.ToString() ?? "null" };
+                }
+                catch (Exception ex) { return new { error = $"Error setting {fieldName}: {ex.Message}" }; }
+            }
+
+            var field = type.GetField(fieldName, flags);
+            if (field != null)
+            {
+                try
+                {
+                    var converted = ComponentSkills.ConvertValue(value, field.FieldType);
+                    field.SetValue(comp, converted);
+                    return new { success = true, target = comp.gameObject.name, component = type.Name, field = fieldName, valueSet = converted?.ToString() ?? "null" };
+                }
+                catch (Exception ex) { return new { error = $"Error setting {fieldName}: {ex.Message}" }; }
+            }
+
+            return new { error = $"Property/field '{fieldName}' not found on {type.Name}" };
+        }
+
+        #endregion
+
         #region Helpers
 
         private static object SnapshotGameObject(GameObject go, int depth, int maxDepth)
