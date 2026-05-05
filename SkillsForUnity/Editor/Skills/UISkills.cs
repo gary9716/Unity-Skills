@@ -1,10 +1,10 @@
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEditor;
-using System.Linq;
-using System.Reflection;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace UnitySkills
 {
@@ -40,7 +40,13 @@ namespace UnitySkills
         /// <summary>
         /// Add text component - uses TMP if available, otherwise Legacy Text
         /// </summary>
-        private static Component AddTextComponent(GameObject go, string text, int fontSize, Color color, TextAnchor alignment = TextAnchor.MiddleLeft)
+        private static Component AddTextComponent(
+            GameObject go,
+            string text,
+            int fontSize,
+            Color color,
+            TextAnchor alignment = TextAnchor.MiddleLeft
+        )
         {
             if (IsTMPAvailable())
             {
@@ -49,9 +55,11 @@ namespace UnitySkills
                 _tmpTextType.GetProperty("text")?.SetValue(tmp, text);
                 _tmpTextType.GetProperty("fontSize")?.SetValue(tmp, (float)fontSize);
                 _tmpTextType.GetProperty("color")?.SetValue(tmp, color);
-                
+
                 // Convert TextAnchor to TMP alignment
-                var alignmentOptionsType = Type.GetType("TMPro.TextAlignmentOptions, Unity.TextMeshPro");
+                var alignmentOptionsType = Type.GetType(
+                    "TMPro.TextAlignmentOptions, Unity.TextMeshPro"
+                );
                 if (alignmentOptionsType != null)
                 {
                     object tmpAlignment = alignment switch
@@ -65,7 +73,7 @@ namespace UnitySkills
                         TextAnchor.LowerLeft => Enum.Parse(alignmentOptionsType, "BottomLeft"),
                         TextAnchor.LowerCenter => Enum.Parse(alignmentOptionsType, "Bottom"),
                         TextAnchor.LowerRight => Enum.Parse(alignmentOptionsType, "BottomRight"),
-                        _ => Enum.Parse(alignmentOptionsType, "Center")
+                        _ => Enum.Parse(alignmentOptionsType, "Center"),
                     };
                     _tmpTextType.GetProperty("alignment")?.SetValue(tmp, tmpAlignment);
                 }
@@ -90,8 +98,9 @@ namespace UnitySkills
         /// </summary>
         private static bool SetTextOnComponent(Component comp, string text)
         {
-            if (comp == null) return false;
-            
+            if (comp == null)
+                return false;
+
             var textProp = comp.GetType().GetProperty("text");
             if (textProp != null)
             {
@@ -100,8 +109,12 @@ namespace UnitySkills
             }
             return false;
         }
+
         [UnitySkill("ui_create_canvas", "Create a new Canvas", TracksWorkflow = true)]
-        public static object UICreateCanvas(string name = "Canvas", string renderMode = "ScreenSpaceOverlay")
+        public static object UICreateCanvas(
+            string name = "Canvas",
+            string renderMode = "ScreenSpaceOverlay"
+        )
         {
             var go = new GameObject(name);
             var canvas = go.AddComponent<Canvas>();
@@ -132,12 +145,19 @@ namespace UnitySkills
                 success = true,
                 name = go.name,
                 instanceId = go.GetInstanceID(),
-                renderMode = canvas.renderMode.ToString()
+                renderMode = canvas.renderMode.ToString(),
             };
         }
 
         [UnitySkill("ui_create_panel", "Create a Panel UI element", TracksWorkflow = true)]
-        public static object UICreatePanel(string name = "Panel", string parent = null, float r = 1, float g = 1, float b = 1, float a = 0.5f)
+        public static object UICreatePanel(
+            string name = "Panel",
+            string parent = null,
+            float r = 1,
+            float g = 1,
+            float b = 1,
+            float a = 0.5f
+        )
         {
             var parentGo = FindOrCreateCanvas(parent);
             if (parentGo == null)
@@ -157,11 +177,23 @@ namespace UnitySkills
             Undo.RegisterCreatedObjectUndo(go, "Create Panel");
             WorkflowManager.SnapshotObject(go, SnapshotType.Created);
 
-            return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name };
+            return new
+            {
+                success = true,
+                name = go.name,
+                instanceId = go.GetInstanceID(),
+                parent = parentGo.name,
+            };
         }
 
         [UnitySkill("ui_create_button", "Create a Button UI element", TracksWorkflow = true)]
-        public static object UICreateButton(string name = "Button", string parent = null, string text = "Button", float width = 160, float height = 30)
+        public static object UICreateButton(
+            string name = "Button",
+            string parent = null,
+            string text = "Button",
+            float width = 160,
+            float height = 30
+        )
         {
             var parentGo = FindOrCreateCanvas(parent);
             if (parentGo == null)
@@ -191,11 +223,26 @@ namespace UnitySkills
             Undo.RegisterCreatedObjectUndo(go, "Create Button");
             WorkflowManager.SnapshotObject(go, SnapshotType.Created);
 
-            return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name, text };
+            return new
+            {
+                success = true,
+                name = go.name,
+                instanceId = go.GetInstanceID(),
+                parent = parentGo.name,
+                text,
+            };
         }
 
         [UnitySkill("ui_create_text", "Create a Text UI element", TracksWorkflow = true)]
-        public static object UICreateText(string name = "Text", string parent = null, string text = "New Text", int fontSize = 14, float r = 0, float g = 0, float b = 0)
+        public static object UICreateText(
+            string name = "Text",
+            string parent = null,
+            string text = "New Text",
+            int fontSize = 14,
+            float r = 0,
+            float g = 0,
+            float b = 0
+        )
         {
             var parentGo = FindOrCreateCanvas(parent);
             if (parentGo == null)
@@ -212,11 +259,24 @@ namespace UnitySkills
             Undo.RegisterCreatedObjectUndo(go, "Create Text");
             WorkflowManager.SnapshotObject(go, SnapshotType.Created);
 
-            return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name, usingTMP = IsTMPAvailable() };
+            return new
+            {
+                success = true,
+                name = go.name,
+                instanceId = go.GetInstanceID(),
+                parent = parentGo.name,
+                usingTMP = IsTMPAvailable(),
+            };
         }
 
         [UnitySkill("ui_create_image", "Create an Image UI element", TracksWorkflow = true)]
-        public static object UICreateImage(string name = "Image", string parent = null, string spritePath = null, float width = 100, float height = 100)
+        public static object UICreateImage(
+            string name = "Image",
+            string parent = null,
+            string spritePath = null,
+            float width = 100,
+            float height = 100
+        )
         {
             var parentGo = FindOrCreateCanvas(parent);
             if (parentGo == null)
@@ -240,58 +300,145 @@ namespace UnitySkills
             Undo.RegisterCreatedObjectUndo(go, "Create Image");
             WorkflowManager.SnapshotObject(go, SnapshotType.Created);
 
-            return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name };
+            return new
+            {
+                success = true,
+                name = go.name,
+                instanceId = go.GetInstanceID(),
+                parent = parentGo.name,
+            };
         }
 
-        [UnitySkill("ui_create_batch", "Create multiple UI elements (Efficient). items: JSON array of {type, name, parent, text, width, height, ...}", TracksWorkflow = true)]
+        [UnitySkill(
+            "ui_create_batch",
+            "Create multiple UI elements (Efficient). items: JSON array of {type, name, parent, text, width, height, ...}",
+            TracksWorkflow = true
+        )]
         public static object UICreateBatch(string items)
         {
-            return BatchExecutor.Execute<BatchUIItem>(items, item =>
-            {
-                object result;
-                switch ((item.type ?? "").ToLower())
+            return BatchExecutor.Execute<BatchUIItem>(
+                items,
+                item =>
                 {
-                    case "canvas":
-                        result = UICreateCanvas(item.name, item.renderMode ?? "ScreenSpaceOverlay");
-                        break;
-                    case "panel":
-                        result = UICreatePanel(item.name, item.parent, item.r, item.g, item.b, item.a);
-                        break;
-                    case "button":
-                        result = UICreateButton(item.name, item.parent, item.text ?? "Button", item.width, item.height);
-                        break;
-                    case "text":
-                        result = UICreateText(item.name, item.parent, item.text ?? "Text", (int)item.fontSize, item.r, item.g, item.b);
-                        break;
-                    case "image":
-                        result = UICreateImage(item.name, item.parent, item.spritePath, item.width, item.height);
-                        break;
-                    case "inputfield":
-                        result = UICreateInputField(item.name, item.parent, item.placeholder ?? "Enter text...", item.width, item.height);
-                        break;
-                    case "slider":
-                        result = UICreateSlider(item.name, item.parent, item.minValue, item.maxValue, item.value, item.width, item.height);
-                        break;
-                    case "toggle":
-                        result = UICreateToggle(item.name, item.parent, item.label ?? "Toggle", item.isOn);
-                        break;
-                    case "dropdown":
-                        result = UICreateDropdown(item.name, item.parent, item.options, item.width, item.height);
-                        break;
-                    case "scrollview":
-                        result = UICreateScrollview(item.name, item.parent, item.width, item.height);
-                        break;
-                    case "rawimage":
-                        result = UICreateRawImage(item.name, item.parent, item.texturePath, item.width, item.height);
-                        break;
-                    case "scrollbar":
-                        result = UICreateScrollbar(item.name, item.parent, item.direction ?? "BottomToTop", item.value, item.size, (int)item.numberOfSteps);
-                        break;
-                    default:
-                        throw new System.Exception($"Unknown UI type: {item.type}");
-                }
-                return result;
-            }, item => item.type);
+                    object result;
+                    switch ((item.type ?? "").ToLower())
+                    {
+                        case "canvas":
+                            result = UICreateCanvas(
+                                item.name,
+                                item.renderMode ?? "ScreenSpaceOverlay"
+                            );
+                            break;
+                        case "panel":
+                            result = UICreatePanel(
+                                item.name,
+                                item.parent,
+                                item.r,
+                                item.g,
+                                item.b,
+                                item.a
+                            );
+                            break;
+                        case "button":
+                            result = UICreateButton(
+                                item.name,
+                                item.parent,
+                                item.text ?? "Button",
+                                item.width,
+                                item.height
+                            );
+                            break;
+                        case "text":
+                            result = UICreateText(
+                                item.name,
+                                item.parent,
+                                item.text ?? "Text",
+                                (int)item.fontSize,
+                                item.r,
+                                item.g,
+                                item.b
+                            );
+                            break;
+                        case "image":
+                            result = UICreateImage(
+                                item.name,
+                                item.parent,
+                                item.spritePath,
+                                item.width,
+                                item.height
+                            );
+                            break;
+                        case "inputfield":
+                            result = UICreateInputField(
+                                item.name,
+                                item.parent,
+                                item.placeholder ?? "Enter text...",
+                                item.width,
+                                item.height
+                            );
+                            break;
+                        case "slider":
+                            result = UICreateSlider(
+                                item.name,
+                                item.parent,
+                                item.minValue,
+                                item.maxValue,
+                                item.value,
+                                item.width,
+                                item.height
+                            );
+                            break;
+                        case "toggle":
+                            result = UICreateToggle(
+                                item.name,
+                                item.parent,
+                                item.label ?? "Toggle",
+                                item.isOn
+                            );
+                            break;
+                        case "dropdown":
+                            result = UICreateDropdown(
+                                item.name,
+                                item.parent,
+                                item.options,
+                                item.width,
+                                item.height
+                            );
+                            break;
+                        case "scrollview":
+                            result = UICreateScrollview(
+                                item.name,
+                                item.parent,
+                                item.width,
+                                item.height
+                            );
+                            break;
+                        case "rawimage":
+                            result = UICreateRawImage(
+                                item.name,
+                                item.parent,
+                                item.texturePath,
+                                item.width,
+                                item.height
+                            );
+                            break;
+                        case "scrollbar":
+                            result = UICreateScrollbar(
+                                item.name,
+                                item.parent,
+                                item.direction ?? "BottomToTop",
+                                item.value,
+                                item.size,
+                                (int)item.numberOfSteps
+                            );
+                            break;
+                        default:
+                            throw new System.Exception($"Unknown UI type: {item.type}");
+                    }
+                    return result;
+                },
+                item => item.type
+            );
         }
 
         private class BatchUIItem
@@ -322,8 +469,18 @@ namespace UnitySkills
             public float numberOfSteps { get; set; } = 0;
         }
 
-        [UnitySkill("ui_create_inputfield", "Create an InputField UI element", TracksWorkflow = true)]
-        public static object UICreateInputField(string name = "InputField", string parent = null, string placeholder = "Enter text...", float width = 200, float height = 30)
+        [UnitySkill(
+            "ui_create_inputfield",
+            "Create an InputField UI element",
+            TracksWorkflow = true
+        )]
+        public static object UICreateInputField(
+            string name = "InputField",
+            string parent = null,
+            string placeholder = "Enter text...",
+            float width = 200,
+            float height = 30
+        )
         {
             var parentGo = FindOrCreateCanvas(parent);
             if (parentGo == null)
@@ -360,11 +517,18 @@ namespace UnitySkills
                 placeholderRect.anchorMin = Vector2.zero;
                 placeholderRect.anchorMax = Vector2.one;
                 placeholderRect.sizeDelta = Vector2.zero;
-                var placeholderComp = AddTextComponent(placeholderGo, placeholder, 14, new Color(0.5f, 0.5f, 0.5f));
+                var placeholderComp = AddTextComponent(
+                    placeholderGo,
+                    placeholder,
+                    14,
+                    new Color(0.5f, 0.5f, 0.5f)
+                );
                 // Set italic style
                 var fontStyleType = Type.GetType("TMPro.FontStyles, Unity.TextMeshPro");
                 if (fontStyleType != null)
-                    _tmpTextType.GetProperty("fontStyle")?.SetValue(placeholderComp, Enum.Parse(fontStyleType, "Italic"));
+                    _tmpTextType
+                        .GetProperty("fontStyle")
+                        ?.SetValue(placeholderComp, Enum.Parse(fontStyleType, "Italic"));
 
                 // Text
                 var textGo = new GameObject("Text");
@@ -378,7 +542,9 @@ namespace UnitySkills
                 // Set TMP_InputField properties
                 _tmpInputFieldType.GetProperty("textViewport")?.SetValue(inputField, textAreaRect);
                 _tmpInputFieldType.GetProperty("textComponent")?.SetValue(inputField, textComp);
-                _tmpInputFieldType.GetProperty("placeholder")?.SetValue(inputField, placeholderComp);
+                _tmpInputFieldType
+                    .GetProperty("placeholder")
+                    ?.SetValue(inputField, placeholderComp);
             }
             else
             {
@@ -423,11 +589,27 @@ namespace UnitySkills
             Undo.RegisterCreatedObjectUndo(go, "Create InputField");
             WorkflowManager.SnapshotObject(go, SnapshotType.Created);
 
-            return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name, placeholder, usingTMP = IsTMPAvailable() };
+            return new
+            {
+                success = true,
+                name = go.name,
+                instanceId = go.GetInstanceID(),
+                parent = parentGo.name,
+                placeholder,
+                usingTMP = IsTMPAvailable(),
+            };
         }
 
         [UnitySkill("ui_create_slider", "Create a Slider UI element", TracksWorkflow = true)]
-        public static object UICreateSlider(string name = "Slider", string parent = null, float minValue = 0, float maxValue = 1, float value = 0.5f, float width = 160, float height = 20)
+        public static object UICreateSlider(
+            string name = "Slider",
+            string parent = null,
+            float minValue = 0,
+            float maxValue = 1,
+            float value = 0.5f,
+            float width = 160,
+            float height = 20
+        )
         {
             var parentGo = FindOrCreateCanvas(parent);
             if (parentGo == null)
@@ -492,11 +674,25 @@ namespace UnitySkills
             Undo.RegisterCreatedObjectUndo(go, "Create Slider");
             WorkflowManager.SnapshotObject(go, SnapshotType.Created);
 
-            return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name, minValue, maxValue, value };
+            return new
+            {
+                success = true,
+                name = go.name,
+                instanceId = go.GetInstanceID(),
+                parent = parentGo.name,
+                minValue,
+                maxValue,
+                value,
+            };
         }
 
         [UnitySkill("ui_create_toggle", "Create a Toggle UI element", TracksWorkflow = true)]
-        public static object UICreateToggle(string name = "Toggle", string parent = null, string label = "Toggle", bool isOn = false)
+        public static object UICreateToggle(
+            string name = "Toggle",
+            string parent = null,
+            string label = "Toggle",
+            bool isOn = false
+        )
         {
             var parentGo = FindOrCreateCanvas(parent);
             if (parentGo == null)
@@ -549,14 +745,32 @@ namespace UnitySkills
             Undo.RegisterCreatedObjectUndo(go, "Create Toggle");
             WorkflowManager.SnapshotObject(go, SnapshotType.Created);
 
-            return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name, label, isOn };
+            return new
+            {
+                success = true,
+                name = go.name,
+                instanceId = go.GetInstanceID(),
+                parent = parentGo.name,
+                label,
+                isOn,
+            };
         }
 
-        [UnitySkill("ui_set_text", "Set text content on a UI Text element (supports name/instanceId/path)", TracksWorkflow = true)]
-        public static object UISetText(string name = null, int instanceId = 0, string path = null, string text = null)
+        [UnitySkill(
+            "ui_set_text",
+            "Set text content on a UI Text element (supports name/instanceId/path)",
+            TracksWorkflow = true
+        )]
+        public static object UISetText(
+            string name = null,
+            int instanceId = 0,
+            string path = null,
+            string text = null
+        )
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
-            if (error != null) return error;
+            if (error != null)
+                return error;
 
             // Try TMP first if available
             if (IsTMPAvailable())
@@ -567,7 +781,13 @@ namespace UnitySkills
                     WorkflowManager.SnapshotObject(tmpComp);
                     Undo.RecordObject(tmpComp, "Set Text");
                     SetTextOnComponent(tmpComp, text);
-                    return new { success = true, name = go.name, text, usingTMP = true };
+                    return new
+                    {
+                        success = true,
+                        name = go.name,
+                        text,
+                        usingTMP = true,
+                    };
                 }
             }
 
@@ -578,7 +798,13 @@ namespace UnitySkills
                 WorkflowManager.SnapshotObject(textComp);
                 Undo.RecordObject(textComp, "Set Text");
                 textComp.text = text;
-                return new { success = true, name = go.name, text, usingTMP = false };
+                return new
+                {
+                    success = true,
+                    name = go.name,
+                    text,
+                    usingTMP = false,
+                };
             }
 
             return new { error = "No Text component found (checked both TMP and Legacy UI)" };
@@ -595,20 +821,23 @@ namespace UnitySkills
                 var elements = canvas.GetComponentsInChildren<RectTransform>(true);
                 foreach (var element in elements)
                 {
-                    if (results.Count >= limit) break;
+                    if (results.Count >= limit)
+                        break;
 
                     var type = GetUIType(element.gameObject);
                     if (!string.IsNullOrEmpty(uiType) && type.ToLower() != uiType.ToLower())
                         continue;
 
-                    results.Add(new
-                    {
-                        name = element.name,
-                        instanceId = element.gameObject.GetInstanceID(),
-                        path = GameObjectFinder.GetPath(element.gameObject),
-                        uiType = type,
-                        active = element.gameObject.activeInHierarchy
-                    });
+                    results.Add(
+                        new
+                        {
+                            name = element.name,
+                            instanceId = element.gameObject.GetInstanceID(),
+                            path = GameObjectFinder.GetPath(element.gameObject),
+                            uiType = type,
+                            active = element.gameObject.activeInHierarchy,
+                        }
+                    );
                 }
             }
 
@@ -620,12 +849,14 @@ namespace UnitySkills
             if (!string.IsNullOrEmpty(parentName))
             {
                 var parent = GameObjectFinder.Find(name: parentName);
-                if (parent != null) return parent;
+                if (parent != null)
+                    return parent;
             }
 
             // Find existing canvas
             var canvas = UnityEngine.Object.FindObjectOfType<Canvas>();
-            if (canvas != null) return canvas.gameObject;
+            if (canvas != null)
+                return canvas.gameObject;
 
             // Create new canvas
             var go = new GameObject("Canvas");
@@ -642,23 +873,34 @@ namespace UnitySkills
 
         private static string GetUIType(GameObject go)
         {
-            if (go.GetComponent<Canvas>()) return "Canvas";
-            if (go.GetComponent<Button>()) return "Button";
-            if (go.GetComponent<Slider>()) return "Slider";
-            if (go.GetComponent<Toggle>()) return "Toggle";
-            
+            if (go.GetComponent<Canvas>())
+                return "Canvas";
+            if (go.GetComponent<Button>())
+                return "Button";
+            if (go.GetComponent<Slider>())
+                return "Slider";
+            if (go.GetComponent<Toggle>())
+                return "Toggle";
+
             // Check TMP types first if available
             if (IsTMPAvailable())
             {
-                if (_tmpInputFieldType != null && go.GetComponent(_tmpInputFieldType) != null) return "InputField";
-                if (_tmpTextType != null && go.GetComponent(_tmpTextType) != null) return "Text";
+                if (_tmpInputFieldType != null && go.GetComponent(_tmpInputFieldType) != null)
+                    return "InputField";
+                if (_tmpTextType != null && go.GetComponent(_tmpTextType) != null)
+                    return "Text";
             }
-            
-            if (go.GetComponent<InputField>()) return "InputField";
-            if (go.GetComponent<Text>()) return "Text";
-            if (go.GetComponent<Image>()) return "Image";
-            if (go.GetComponent<RawImage>()) return "RawImage";
-            if (go.GetComponent<RectTransform>()) return "RectTransform";
+
+            if (go.GetComponent<InputField>())
+                return "InputField";
+            if (go.GetComponent<Text>())
+                return "Text";
+            if (go.GetComponent<Image>())
+                return "Image";
+            if (go.GetComponent<RawImage>())
+                return "RawImage";
+            if (go.GetComponent<RectTransform>())
+                return "RectTransform";
             return "Unknown";
         }
 
@@ -666,68 +908,131 @@ namespace UnitySkills
         // Advanced UI Layout Skills
         // ==================================================================================
 
-        [UnitySkill("ui_set_anchor", "Set anchor preset for a UI element (TopLeft, TopCenter, TopRight, MiddleLeft, MiddleCenter, MiddleRight, BottomLeft, BottomCenter, BottomRight, StretchHorizontal, StretchVertical, StretchAll)", TracksWorkflow = true)]
-        public static object UISetAnchor(string name = null, int instanceId = 0, string path = null, string preset = "MiddleCenter", bool setPivot = true)
+        [UnitySkill(
+            "ui_set_anchor",
+            "Set anchor preset for a UI element (TopLeft, TopCenter, TopRight, MiddleLeft, MiddleCenter, MiddleRight, BottomLeft, BottomCenter, BottomRight, StretchHorizontal, StretchVertical, StretchAll)",
+            TracksWorkflow = true
+        )]
+        public static object UISetAnchor(
+            string name = null,
+            int instanceId = 0,
+            string path = null,
+            string preset = "MiddleCenter",
+            bool setPivot = true
+        )
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
-            if (error != null) return error;
+            if (error != null)
+                return error;
 
             var rect = go.GetComponent<RectTransform>();
-            if (rect == null) return new { error = "GameObject has no RectTransform" };
+            if (rect == null)
+                return new { error = "GameObject has no RectTransform" };
 
             WorkflowManager.SnapshotObject(rect);
             Undo.RecordObject(rect, "Set Anchor");
 
-            Vector2 anchorMin, anchorMax, pivot;
+            Vector2 anchorMin,
+                anchorMax,
+                pivot;
             switch (preset.ToLower().Replace(" ", ""))
             {
                 case "topleft":
-                    anchorMin = anchorMax = new Vector2(0, 1); pivot = new Vector2(0, 1); break;
+                    anchorMin = anchorMax = new Vector2(0, 1);
+                    pivot = new Vector2(0, 1);
+                    break;
                 case "topcenter":
-                    anchorMin = anchorMax = new Vector2(0.5f, 1); pivot = new Vector2(0.5f, 1); break;
+                    anchorMin = anchorMax = new Vector2(0.5f, 1);
+                    pivot = new Vector2(0.5f, 1);
+                    break;
                 case "topright":
-                    anchorMin = anchorMax = new Vector2(1, 1); pivot = new Vector2(1, 1); break;
+                    anchorMin = anchorMax = new Vector2(1, 1);
+                    pivot = new Vector2(1, 1);
+                    break;
                 case "middleleft":
-                    anchorMin = anchorMax = new Vector2(0, 0.5f); pivot = new Vector2(0, 0.5f); break;
+                    anchorMin = anchorMax = new Vector2(0, 0.5f);
+                    pivot = new Vector2(0, 0.5f);
+                    break;
                 case "middlecenter":
-                    anchorMin = anchorMax = new Vector2(0.5f, 0.5f); pivot = new Vector2(0.5f, 0.5f); break;
+                    anchorMin = anchorMax = new Vector2(0.5f, 0.5f);
+                    pivot = new Vector2(0.5f, 0.5f);
+                    break;
                 case "middleright":
-                    anchorMin = anchorMax = new Vector2(1, 0.5f); pivot = new Vector2(1, 0.5f); break;
+                    anchorMin = anchorMax = new Vector2(1, 0.5f);
+                    pivot = new Vector2(1, 0.5f);
+                    break;
                 case "bottomleft":
-                    anchorMin = anchorMax = new Vector2(0, 0); pivot = new Vector2(0, 0); break;
+                    anchorMin = anchorMax = new Vector2(0, 0);
+                    pivot = new Vector2(0, 0);
+                    break;
                 case "bottomcenter":
-                    anchorMin = anchorMax = new Vector2(0.5f, 0); pivot = new Vector2(0.5f, 0); break;
+                    anchorMin = anchorMax = new Vector2(0.5f, 0);
+                    pivot = new Vector2(0.5f, 0);
+                    break;
                 case "bottomright":
-                    anchorMin = anchorMax = new Vector2(1, 0); pivot = new Vector2(1, 0); break;
+                    anchorMin = anchorMax = new Vector2(1, 0);
+                    pivot = new Vector2(1, 0);
+                    break;
                 case "stretchhorizontal":
-                    anchorMin = new Vector2(0, 0.5f); anchorMax = new Vector2(1, 0.5f); pivot = new Vector2(0.5f, 0.5f); break;
+                    anchorMin = new Vector2(0, 0.5f);
+                    anchorMax = new Vector2(1, 0.5f);
+                    pivot = new Vector2(0.5f, 0.5f);
+                    break;
                 case "stretchvertical":
-                    anchorMin = new Vector2(0.5f, 0); anchorMax = new Vector2(0.5f, 1); pivot = new Vector2(0.5f, 0.5f); break;
+                    anchorMin = new Vector2(0.5f, 0);
+                    anchorMax = new Vector2(0.5f, 1);
+                    pivot = new Vector2(0.5f, 0.5f);
+                    break;
                 case "stretchall":
-                    anchorMin = Vector2.zero; anchorMax = Vector2.one; pivot = new Vector2(0.5f, 0.5f); break;
+                    anchorMin = Vector2.zero;
+                    anchorMax = Vector2.one;
+                    pivot = new Vector2(0.5f, 0.5f);
+                    break;
                 default:
                     return new { error = $"Unknown anchor preset: {preset}" };
             }
 
             rect.anchorMin = anchorMin;
             rect.anchorMax = anchorMax;
-            if (setPivot) rect.pivot = pivot;
+            if (setPivot)
+                rect.pivot = pivot;
 
-            return new { success = true, name = go.name, preset, anchorMin = $"({anchorMin.x}, {anchorMin.y})", anchorMax = $"({anchorMax.x}, {anchorMax.y})" };
+            return new
+            {
+                success = true,
+                name = go.name,
+                preset,
+                anchorMin = $"({anchorMin.x}, {anchorMin.y})",
+                anchorMax = $"({anchorMax.x}, {anchorMax.y})",
+            };
         }
 
-        [UnitySkill("ui_set_rect", "Set RectTransform size, position, and padding (offsets)", TracksWorkflow = true)]
+        [UnitySkill(
+            "ui_set_rect",
+            "Set RectTransform size, position, and padding (offsets)",
+            TracksWorkflow = true
+        )]
         public static object UISetRect(
-            string name = null, int instanceId = 0, string path = null,
-            float? width = null, float? height = null,
-            float? posX = null, float? posY = null,
-            float? left = null, float? right = null, float? top = null, float? bottom = null)
+            string name = null,
+            int instanceId = 0,
+            string path = null,
+            float? width = null,
+            float? height = null,
+            float? posX = null,
+            float? posY = null,
+            float? left = null,
+            float? right = null,
+            float? top = null,
+            float? bottom = null
+        )
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
-            if (error != null) return error;
+            if (error != null)
+                return error;
 
             var rect = go.GetComponent<RectTransform>();
-            if (rect == null) return new { error = "GameObject has no RectTransform" };
+            if (rect == null)
+                return new { error = "GameObject has no RectTransform" };
 
             WorkflowManager.SnapshotObject(rect);
             Undo.RecordObject(rect, "Set Rect");
@@ -736,8 +1041,10 @@ namespace UnitySkills
             if (width.HasValue || height.HasValue)
             {
                 var size = rect.sizeDelta;
-                if (width.HasValue) size.x = width.Value;
-                if (height.HasValue) size.y = height.Value;
+                if (width.HasValue)
+                    size.x = width.Value;
+                if (height.HasValue)
+                    size.y = height.Value;
                 rect.sizeDelta = size;
             }
 
@@ -745,8 +1052,10 @@ namespace UnitySkills
             if (posX.HasValue || posY.HasValue)
             {
                 var pos = rect.anchoredPosition;
-                if (posX.HasValue) pos.x = posX.Value;
-                if (posY.HasValue) pos.y = posY.Value;
+                if (posX.HasValue)
+                    pos.x = posX.Value;
+                if (posY.HasValue)
+                    pos.y = posY.Value;
                 rect.anchoredPosition = pos;
             }
 
@@ -754,35 +1063,61 @@ namespace UnitySkills
             if (left.HasValue || bottom.HasValue)
             {
                 var min = rect.offsetMin;
-                if (left.HasValue) min.x = left.Value;
-                if (bottom.HasValue) min.y = bottom.Value;
+                if (left.HasValue)
+                    min.x = left.Value;
+                if (bottom.HasValue)
+                    min.y = bottom.Value;
                 rect.offsetMin = min;
             }
             if (right.HasValue || top.HasValue)
             {
                 var max = rect.offsetMax;
-                if (right.HasValue) max.x = -right.Value;
-                if (top.HasValue) max.y = -top.Value;
+                if (right.HasValue)
+                    max.x = -right.Value;
+                if (top.HasValue)
+                    max.y = -top.Value;
                 rect.offsetMax = max;
             }
 
-            return new { success = true, name = go.name, sizeDelta = $"({rect.sizeDelta.x}, {rect.sizeDelta.y})", anchoredPosition = $"({rect.anchoredPosition.x}, {rect.anchoredPosition.y})" };
+            return new
+            {
+                success = true,
+                name = go.name,
+                sizeDelta = $"({rect.sizeDelta.x}, {rect.sizeDelta.y})",
+                anchoredPosition = $"({rect.anchoredPosition.x}, {rect.anchoredPosition.y})",
+            };
         }
 
-        [UnitySkill("ui_layout_children", "Arrange child UI elements in a layout (Vertical, Horizontal, Grid)")]
+        [UnitySkill(
+            "ui_layout_children",
+            "Arrange child UI elements in a layout (Vertical, Horizontal, Grid)"
+        )]
         public static object UILayoutChildren(
-            string name = null, int instanceId = 0, string path = null,
-            string layoutType = "Vertical",  // Vertical, Horizontal, Grid
+            string name = null,
+            int instanceId = 0,
+            string path = null,
+            string layoutType = "Vertical", // Vertical, Horizontal, Grid
             float spacing = 10f,
-            float paddingLeft = 0, float paddingRight = 0, float paddingTop = 0, float paddingBottom = 0,
+            float paddingLeft = 0,
+            float paddingRight = 0,
+            float paddingTop = 0,
+            float paddingBottom = 0,
             int gridColumns = 3,
-            bool childForceExpandWidth = false, bool childForceExpandHeight = false)
+            bool childForceExpandWidth = false,
+            bool childForceExpandHeight = false
+        )
         {
-            var (parentGo, findErr) = GameObjectFinder.FindOrError(name: name, instanceId: instanceId, path: path);
-            if (findErr != null) return findErr;
+            var (parentGo, findErr) = GameObjectFinder.FindOrError(
+                name: name,
+                instanceId: instanceId,
+                path: path
+            );
+            if (findErr != null)
+                return findErr;
 
             var rect = parentGo.GetComponent<RectTransform>();
-            if (rect == null) return new { error = "Parent has no RectTransform" };
+            if (rect == null)
+                return new { error = "Parent has no RectTransform" };
 
             Undo.RecordObject(parentGo, "Add Layout");
 
@@ -790,11 +1125,19 @@ namespace UnitySkills
             var existingV = parentGo.GetComponent<UnityEngine.UI.VerticalLayoutGroup>();
             var existingH = parentGo.GetComponent<UnityEngine.UI.HorizontalLayoutGroup>();
             var existingG = parentGo.GetComponent<UnityEngine.UI.GridLayoutGroup>();
-            if (existingV) Undo.DestroyObjectImmediate(existingV);
-            if (existingH) Undo.DestroyObjectImmediate(existingH);
-            if (existingG) Undo.DestroyObjectImmediate(existingG);
+            if (existingV)
+                Undo.DestroyObjectImmediate(existingV);
+            if (existingH)
+                Undo.DestroyObjectImmediate(existingH);
+            if (existingG)
+                Undo.DestroyObjectImmediate(existingG);
 
-            var padding = new RectOffset((int)paddingLeft, (int)paddingRight, (int)paddingTop, (int)paddingBottom);
+            var padding = new RectOffset(
+                (int)paddingLeft,
+                (int)paddingRight,
+                (int)paddingTop,
+                (int)paddingBottom
+            );
 
             switch (layoutType.ToLower())
             {
@@ -834,38 +1177,66 @@ namespace UnitySkills
             if (parentGo.GetComponent<UnityEngine.UI.ContentSizeFitter>() == null)
             {
                 var fitter = Undo.AddComponent<UnityEngine.UI.ContentSizeFitter>(parentGo);
-                fitter.verticalFit = layoutType.ToLower() == "vertical" 
-                    ? UnityEngine.UI.ContentSizeFitter.FitMode.PreferredSize 
-                    : UnityEngine.UI.ContentSizeFitter.FitMode.Unconstrained;
-                fitter.horizontalFit = layoutType.ToLower() == "horizontal" 
-                    ? UnityEngine.UI.ContentSizeFitter.FitMode.PreferredSize 
-                    : UnityEngine.UI.ContentSizeFitter.FitMode.Unconstrained;
+                fitter.verticalFit =
+                    layoutType.ToLower() == "vertical"
+                        ? UnityEngine.UI.ContentSizeFitter.FitMode.PreferredSize
+                        : UnityEngine.UI.ContentSizeFitter.FitMode.Unconstrained;
+                fitter.horizontalFit =
+                    layoutType.ToLower() == "horizontal"
+                        ? UnityEngine.UI.ContentSizeFitter.FitMode.PreferredSize
+                        : UnityEngine.UI.ContentSizeFitter.FitMode.Unconstrained;
             }
 
-            return new { success = true, parent = parentGo.name, layoutType, childCount = rect.childCount };
+            return new
+            {
+                success = true,
+                parent = parentGo.name,
+                layoutType,
+                childCount = rect.childCount,
+            };
         }
 
-        [UnitySkill("ui_align_selected", "Align selected UI elements (Left, Center, Right, Top, Middle, Bottom)")]
+        [UnitySkill(
+            "ui_align_selected",
+            "Align selected UI elements (Left, Center, Right, Top, Middle, Bottom)"
+        )]
         public static object UIAlignSelected(string alignment = "Center")
         {
-            var selected = Selection.gameObjects.Where(g => g.GetComponent<RectTransform>() != null).ToList();
-            if (selected.Count < 2) return new { error = "Select at least 2 UI elements" };
+            var selected = Selection
+                .gameObjects.Where(g => g.GetComponent<RectTransform>() != null)
+                .ToList();
+            if (selected.Count < 2)
+                return new { error = "Select at least 2 UI elements" };
 
-            Undo.RecordObjects(selected.Select(g => g.GetComponent<RectTransform>()).Cast<UnityEngine.Object>().ToArray(), "Align UI");
+            Undo.RecordObjects(
+                selected
+                    .Select(g => g.GetComponent<RectTransform>())
+                    .Cast<UnityEngine.Object>()
+                    .ToArray(),
+                "Align UI"
+            );
 
             var rects = selected.Select(g => g.GetComponent<RectTransform>()).ToList();
-            
+
             switch (alignment.ToLower())
             {
                 case "left":
                     float minX = rects.Min(r => r.anchoredPosition.x - r.rect.width * r.pivot.x);
                     foreach (var r in rects)
-                        r.anchoredPosition = new Vector2(minX + r.rect.width * r.pivot.x, r.anchoredPosition.y);
+                        r.anchoredPosition = new Vector2(
+                            minX + r.rect.width * r.pivot.x,
+                            r.anchoredPosition.y
+                        );
                     break;
                 case "right":
-                    float maxX = rects.Max(r => r.anchoredPosition.x + r.rect.width * (1 - r.pivot.x));
+                    float maxX = rects.Max(r =>
+                        r.anchoredPosition.x + r.rect.width * (1 - r.pivot.x)
+                    );
                     foreach (var r in rects)
-                        r.anchoredPosition = new Vector2(maxX - r.rect.width * (1 - r.pivot.x), r.anchoredPosition.y);
+                        r.anchoredPosition = new Vector2(
+                            maxX - r.rect.width * (1 - r.pivot.x),
+                            r.anchoredPosition.y
+                        );
                     break;
                 case "center":
                     float avgX = rects.Average(r => r.anchoredPosition.x);
@@ -873,14 +1244,22 @@ namespace UnitySkills
                         r.anchoredPosition = new Vector2(avgX, r.anchoredPosition.y);
                     break;
                 case "top":
-                    float maxY = rects.Max(r => r.anchoredPosition.y + r.rect.height * (1 - r.pivot.y));
+                    float maxY = rects.Max(r =>
+                        r.anchoredPosition.y + r.rect.height * (1 - r.pivot.y)
+                    );
                     foreach (var r in rects)
-                        r.anchoredPosition = new Vector2(r.anchoredPosition.x, maxY - r.rect.height * (1 - r.pivot.y));
+                        r.anchoredPosition = new Vector2(
+                            r.anchoredPosition.x,
+                            maxY - r.rect.height * (1 - r.pivot.y)
+                        );
                     break;
                 case "bottom":
                     float minY = rects.Min(r => r.anchoredPosition.y - r.rect.height * r.pivot.y);
                     foreach (var r in rects)
-                        r.anchoredPosition = new Vector2(r.anchoredPosition.x, minY + r.rect.height * r.pivot.y);
+                        r.anchoredPosition = new Vector2(
+                            r.anchoredPosition.x,
+                            minY + r.rect.height * r.pivot.y
+                        );
                     break;
                 case "middle":
                     float avgY = rects.Average(r => r.anchoredPosition.y);
@@ -891,22 +1270,39 @@ namespace UnitySkills
                     return new { error = $"Unknown alignment: {alignment}" };
             }
 
-            return new { success = true, alignment, count = selected.Count };
+            return new
+            {
+                success = true,
+                alignment,
+                count = selected.Count,
+            };
         }
 
-        [UnitySkill("ui_distribute_selected", "Distribute selected UI elements evenly (Horizontal, Vertical)")]
+        [UnitySkill(
+            "ui_distribute_selected",
+            "Distribute selected UI elements evenly (Horizontal, Vertical)"
+        )]
         public static object UIDistributeSelected(string direction = "Horizontal")
         {
-            var selected = Selection.gameObjects
-                .Where(g => g.GetComponent<RectTransform>() != null)
-                .OrderBy(g => direction.ToLower() == "horizontal" 
-                    ? g.GetComponent<RectTransform>().anchoredPosition.x 
-                    : g.GetComponent<RectTransform>().anchoredPosition.y)
+            var selected = Selection
+                .gameObjects.Where(g => g.GetComponent<RectTransform>() != null)
+                .OrderBy(g =>
+                    direction.ToLower() == "horizontal"
+                        ? g.GetComponent<RectTransform>().anchoredPosition.x
+                        : g.GetComponent<RectTransform>().anchoredPosition.y
+                )
                 .ToList();
 
-            if (selected.Count < 3) return new { error = "Select at least 3 UI elements to distribute" };
+            if (selected.Count < 3)
+                return new { error = "Select at least 3 UI elements to distribute" };
 
-            Undo.RecordObjects(selected.Select(g => g.GetComponent<RectTransform>()).Cast<UnityEngine.Object>().ToArray(), "Distribute UI");
+            Undo.RecordObjects(
+                selected
+                    .Select(g => g.GetComponent<RectTransform>())
+                    .Cast<UnityEngine.Object>()
+                    .ToArray(),
+                "Distribute UI"
+            );
 
             var rects = selected.Select(g => g.GetComponent<RectTransform>()).ToList();
 
@@ -915,29 +1311,50 @@ namespace UnitySkills
                 float minX = rects.First().anchoredPosition.x;
                 float maxX = rects.Last().anchoredPosition.x;
                 float step = (maxX - minX) / (rects.Count - 1);
-                
+
                 for (int i = 0; i < rects.Count; i++)
-                    rects[i].anchoredPosition = new Vector2(minX + step * i, rects[i].anchoredPosition.y);
+                    rects[i].anchoredPosition = new Vector2(
+                        minX + step * i,
+                        rects[i].anchoredPosition.y
+                    );
             }
             else
             {
                 float minY = rects.First().anchoredPosition.y;
                 float maxY = rects.Last().anchoredPosition.y;
                 float step = (maxY - minY) / (rects.Count - 1);
-                
+
                 for (int i = 0; i < rects.Count; i++)
-                    rects[i].anchoredPosition = new Vector2(rects[i].anchoredPosition.x, minY + step * i);
+                    rects[i].anchoredPosition = new Vector2(
+                        rects[i].anchoredPosition.x,
+                        minY + step * i
+                    );
             }
 
-            return new { success = true, direction, count = selected.Count };
+            return new
+            {
+                success = true,
+                direction,
+                count = selected.Count,
+            };
         }
 
         // ==================================================================================
         // New UI Element Creation Skills
         // ==================================================================================
 
-        [UnitySkill("ui_create_dropdown", "Create a Dropdown UI element with options", TracksWorkflow = true)]
-        public static object UICreateDropdown(string name = "Dropdown", string parent = null, string options = null, float width = 160, float height = 30)
+        [UnitySkill(
+            "ui_create_dropdown",
+            "Create a Dropdown UI element with options",
+            TracksWorkflow = true
+        )]
+        public static object UICreateDropdown(
+            string name = "Dropdown",
+            string parent = null,
+            string options = null,
+            float width = 160,
+            float height = 30
+        )
         {
             var parentGo = FindOrCreateCanvas(parent);
             if (parentGo == null)
@@ -1095,7 +1512,10 @@ namespace UnitySkills
 
             if (usingTmpDropdown)
             {
-                var addMethod = _tmpDropdownType.GetMethod("AddOptions", new[] { typeof(List<string>) });
+                var addMethod = _tmpDropdownType.GetMethod(
+                    "AddOptions",
+                    new[] { typeof(List<string>) }
+                );
                 addMethod?.Invoke(dropdownComp, new object[] { optionList });
             }
             else
@@ -1106,15 +1526,30 @@ namespace UnitySkills
             Undo.RegisterCreatedObjectUndo(go, "Create Dropdown");
             WorkflowManager.SnapshotObject(go, SnapshotType.Created);
 
-            return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name, optionCount = optionList.Count };
+            return new
+            {
+                success = true,
+                name = go.name,
+                instanceId = go.GetInstanceID(),
+                parent = parentGo.name,
+                optionCount = optionList.Count,
+            };
         }
 
-        [UnitySkill("ui_create_scrollview", "Create a ScrollRect (ScrollView) UI element", TracksWorkflow = true)]
+        [UnitySkill(
+            "ui_create_scrollview",
+            "Create a ScrollRect (ScrollView) UI element",
+            TracksWorkflow = true
+        )]
         public static object UICreateScrollview(
-            string name = "ScrollView", string parent = null,
-            float width = 300, float height = 200,
-            bool horizontal = false, bool vertical = true,
-            string movementType = "Elastic")
+            string name = "ScrollView",
+            string parent = null,
+            float width = 300,
+            float height = 200,
+            bool horizontal = false,
+            bool vertical = true,
+            string movementType = "Elastic"
+        )
         {
             var parentGo = FindOrCreateCanvas(parent);
             if (parentGo == null)
@@ -1161,11 +1596,29 @@ namespace UnitySkills
             Undo.RegisterCreatedObjectUndo(go, "Create ScrollView");
             WorkflowManager.SnapshotObject(go, SnapshotType.Created);
 
-            return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name, horizontal, vertical };
+            return new
+            {
+                success = true,
+                name = go.name,
+                instanceId = go.GetInstanceID(),
+                parent = parentGo.name,
+                horizontal,
+                vertical,
+            };
         }
 
-        [UnitySkill("ui_create_rawimage", "Create a RawImage UI element (for Texture2D/RenderTexture)", TracksWorkflow = true)]
-        public static object UICreateRawImage(string name = "RawImage", string parent = null, string texturePath = null, float width = 100, float height = 100)
+        [UnitySkill(
+            "ui_create_rawimage",
+            "Create a RawImage UI element (for Texture2D/RenderTexture)",
+            TracksWorkflow = true
+        )]
+        public static object UICreateRawImage(
+            string name = "RawImage",
+            string parent = null,
+            string texturePath = null,
+            float width = 100,
+            float height = 100
+        )
         {
             var parentGo = FindOrCreateCanvas(parent);
             if (parentGo == null)
@@ -1189,13 +1642,29 @@ namespace UnitySkills
             Undo.RegisterCreatedObjectUndo(go, "Create RawImage");
             WorkflowManager.SnapshotObject(go, SnapshotType.Created);
 
-            return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name, hasTexture = rawImage.texture != null };
+            return new
+            {
+                success = true,
+                name = go.name,
+                instanceId = go.GetInstanceID(),
+                parent = parentGo.name,
+                hasTexture = rawImage.texture != null,
+            };
         }
 
-        [UnitySkill("ui_create_scrollbar", "Create a standalone Scrollbar UI element", TracksWorkflow = true)]
+        [UnitySkill(
+            "ui_create_scrollbar",
+            "Create a standalone Scrollbar UI element",
+            TracksWorkflow = true
+        )]
         public static object UICreateScrollbar(
-            string name = "Scrollbar", string parent = null,
-            string direction = "BottomToTop", float value = 0, float size = 0.2f, int numberOfSteps = 0)
+            string name = "Scrollbar",
+            string parent = null,
+            string direction = "BottomToTop",
+            float value = 0,
+            float size = 0.2f,
+            int numberOfSteps = 0
+        )
         {
             var parentGo = FindOrCreateCanvas(parent);
             if (parentGo == null)
@@ -1241,32 +1710,59 @@ namespace UnitySkills
             Undo.RegisterCreatedObjectUndo(go, "Create Scrollbar");
             WorkflowManager.SnapshotObject(go, SnapshotType.Created);
 
-            return new { success = true, name = go.name, instanceId = go.GetInstanceID(), parent = parentGo.name, direction };
+            return new
+            {
+                success = true,
+                name = go.name,
+                instanceId = go.GetInstanceID(),
+                parent = parentGo.name,
+                direction,
+            };
         }
 
         // ==================================================================================
         // UI Property Configuration Skills
         // ==================================================================================
 
-        [UnitySkill("ui_set_image", "Set Image properties (type, fillMethod, fillAmount, preserveAspect, sprite)", TracksWorkflow = true)]
+        [UnitySkill(
+            "ui_set_image",
+            "Set Image properties (type, fillMethod, fillAmount, preserveAspect, sprite)",
+            TracksWorkflow = true
+        )]
         public static object UISetImage(
-            string name = null, int instanceId = 0, string path = null,
+            string name = null,
+            int instanceId = 0,
+            string path = null,
             string type = null,
-            string fillMethod = null, float? fillAmount = null, bool? fillClockwise = null, int? fillOrigin = null,
-            bool? preserveAspect = null, string spritePath = null, float? pixelsPerUnitMultiplier = null)
+            string fillMethod = null,
+            float? fillAmount = null,
+            bool? fillClockwise = null,
+            int? fillOrigin = null,
+            bool? preserveAspect = null,
+            string spritePath = null,
+            float? pixelsPerUnitMultiplier = null
+        )
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
-            if (error != null) return error;
+            if (error != null)
+                return error;
 
             var image = go.GetComponent<Image>();
-            if (image == null) return new { error = "No Image component found" };
+            if (image == null)
+                return new { error = "No Image component found" };
 
             WorkflowManager.SnapshotObject(image);
             Undo.RecordObject(image, "Set Image");
 
-            if (!string.IsNullOrEmpty(type) && Enum.TryParse<Image.Type>(type, true, out var imgType))
+            if (
+                !string.IsNullOrEmpty(type)
+                && Enum.TryParse<Image.Type>(type, true, out var imgType)
+            )
                 image.type = imgType;
-            if (!string.IsNullOrEmpty(fillMethod) && Enum.TryParse<Image.FillMethod>(fillMethod, true, out var fm))
+            if (
+                !string.IsNullOrEmpty(fillMethod)
+                && Enum.TryParse<Image.FillMethod>(fillMethod, true, out var fm)
+            )
                 image.fillMethod = fm;
             if (fillAmount.HasValue)
                 image.fillAmount = fillAmount.Value;
@@ -1290,81 +1786,132 @@ namespace UnitySkills
 
             return new
             {
-                success = true, name = go.name,
+                success = true,
+                name = go.name,
                 type = image.type.ToString(),
                 fillMethod = image.fillMethod.ToString(),
                 fillAmount = image.fillAmount,
-                preserveAspect = image.preserveAspect
+                preserveAspect = image.preserveAspect,
             };
         }
 
-        [UnitySkill("ui_add_layout_element", "Add or configure LayoutElement on a UI element", TracksWorkflow = true)]
+        [UnitySkill(
+            "ui_add_layout_element",
+            "Add or configure LayoutElement on a UI element",
+            TracksWorkflow = true
+        )]
         public static object UIAddLayoutElement(
-            string name = null, int instanceId = 0, string path = null,
-            float? minWidth = null, float? minHeight = null,
-            float? preferredWidth = null, float? preferredHeight = null,
-            float? flexibleWidth = null, float? flexibleHeight = null,
-            bool? ignoreLayout = null, int? layoutPriority = null)
+            string name = null,
+            int instanceId = 0,
+            string path = null,
+            float? minWidth = null,
+            float? minHeight = null,
+            float? preferredWidth = null,
+            float? preferredHeight = null,
+            float? flexibleWidth = null,
+            float? flexibleHeight = null,
+            bool? ignoreLayout = null,
+            int? layoutPriority = null
+        )
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
-            if (error != null) return error;
+            if (error != null)
+                return error;
 
             var layout = go.GetComponent<LayoutElement>() ?? Undo.AddComponent<LayoutElement>(go);
             WorkflowManager.SnapshotObject(layout);
             Undo.RecordObject(layout, "Set LayoutElement");
 
-            if (minWidth.HasValue) layout.minWidth = minWidth.Value;
-            if (minHeight.HasValue) layout.minHeight = minHeight.Value;
-            if (preferredWidth.HasValue) layout.preferredWidth = preferredWidth.Value;
-            if (preferredHeight.HasValue) layout.preferredHeight = preferredHeight.Value;
-            if (flexibleWidth.HasValue) layout.flexibleWidth = flexibleWidth.Value;
-            if (flexibleHeight.HasValue) layout.flexibleHeight = flexibleHeight.Value;
-            if (ignoreLayout.HasValue) layout.ignoreLayout = ignoreLayout.Value;
-            if (layoutPriority.HasValue) layout.layoutPriority = layoutPriority.Value;
+            if (minWidth.HasValue)
+                layout.minWidth = minWidth.Value;
+            if (minHeight.HasValue)
+                layout.minHeight = minHeight.Value;
+            if (preferredWidth.HasValue)
+                layout.preferredWidth = preferredWidth.Value;
+            if (preferredHeight.HasValue)
+                layout.preferredHeight = preferredHeight.Value;
+            if (flexibleWidth.HasValue)
+                layout.flexibleWidth = flexibleWidth.Value;
+            if (flexibleHeight.HasValue)
+                layout.flexibleHeight = flexibleHeight.Value;
+            if (ignoreLayout.HasValue)
+                layout.ignoreLayout = ignoreLayout.Value;
+            if (layoutPriority.HasValue)
+                layout.layoutPriority = layoutPriority.Value;
 
             return new
             {
-                success = true, name = go.name,
-                minWidth = layout.minWidth, minHeight = layout.minHeight,
-                preferredWidth = layout.preferredWidth, preferredHeight = layout.preferredHeight,
-                flexibleWidth = layout.flexibleWidth, flexibleHeight = layout.flexibleHeight,
-                ignoreLayout = layout.ignoreLayout
+                success = true,
+                name = go.name,
+                minWidth = layout.minWidth,
+                minHeight = layout.minHeight,
+                preferredWidth = layout.preferredWidth,
+                preferredHeight = layout.preferredHeight,
+                flexibleWidth = layout.flexibleWidth,
+                flexibleHeight = layout.flexibleHeight,
+                ignoreLayout = layout.ignoreLayout,
             };
         }
 
-        [UnitySkill("ui_add_canvas_group", "Add or configure CanvasGroup on a UI element (alpha, interactable, blocksRaycasts)", TracksWorkflow = true)]
+        [UnitySkill(
+            "ui_add_canvas_group",
+            "Add or configure CanvasGroup on a UI element (alpha, interactable, blocksRaycasts)",
+            TracksWorkflow = true
+        )]
         public static object UIAddCanvasGroup(
-            string name = null, int instanceId = 0, string path = null,
-            float? alpha = null, bool? interactable = null,
-            bool? blocksRaycasts = null, bool? ignoreParentGroups = null)
+            string name = null,
+            int instanceId = 0,
+            string path = null,
+            float? alpha = null,
+            bool? interactable = null,
+            bool? blocksRaycasts = null,
+            bool? ignoreParentGroups = null
+        )
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
-            if (error != null) return error;
+            if (error != null)
+                return error;
 
             var group = go.GetComponent<CanvasGroup>() ?? Undo.AddComponent<CanvasGroup>(go);
             WorkflowManager.SnapshotObject(group);
             Undo.RecordObject(group, "Set CanvasGroup");
 
-            if (alpha.HasValue) group.alpha = alpha.Value;
-            if (interactable.HasValue) group.interactable = interactable.Value;
-            if (blocksRaycasts.HasValue) group.blocksRaycasts = blocksRaycasts.Value;
-            if (ignoreParentGroups.HasValue) group.ignoreParentGroups = ignoreParentGroups.Value;
+            if (alpha.HasValue)
+                group.alpha = alpha.Value;
+            if (interactable.HasValue)
+                group.interactable = interactable.Value;
+            if (blocksRaycasts.HasValue)
+                group.blocksRaycasts = blocksRaycasts.Value;
+            if (ignoreParentGroups.HasValue)
+                group.ignoreParentGroups = ignoreParentGroups.Value;
 
             return new
             {
-                success = true, name = go.name,
-                alpha = group.alpha, interactable = group.interactable,
-                blocksRaycasts = group.blocksRaycasts, ignoreParentGroups = group.ignoreParentGroups
+                success = true,
+                name = go.name,
+                alpha = group.alpha,
+                interactable = group.interactable,
+                blocksRaycasts = group.blocksRaycasts,
+                ignoreParentGroups = group.ignoreParentGroups,
             };
         }
 
-        [UnitySkill("ui_add_mask", "Add Mask or RectMask2D to a UI element (maskType: Mask or RectMask2D)", TracksWorkflow = true)]
+        [UnitySkill(
+            "ui_add_mask",
+            "Add Mask or RectMask2D to a UI element (maskType: Mask or RectMask2D)",
+            TracksWorkflow = true
+        )]
         public static object UIAddMask(
-            string name = null, int instanceId = 0, string path = null,
-            string maskType = "RectMask2D", bool showMaskGraphic = true)
+            string name = null,
+            int instanceId = 0,
+            string path = null,
+            string maskType = "RectMask2D",
+            bool showMaskGraphic = true
+        )
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
-            if (error != null) return error;
+            if (error != null)
+                return error;
 
             WorkflowManager.SnapshotObject(go);
             Undo.RecordObject(go, "Add Mask");
@@ -1385,19 +1932,37 @@ namespace UnitySkills
                 applied = "RectMask2D";
             }
 
-            return new { success = true, name = go.name, maskType = applied, showMaskGraphic };
+            return new
+            {
+                success = true,
+                name = go.name,
+                maskType = applied,
+                showMaskGraphic,
+            };
         }
 
-        [UnitySkill("ui_add_outline", "Add Shadow or Outline effect to a UI element", TracksWorkflow = true)]
+        [UnitySkill(
+            "ui_add_outline",
+            "Add Shadow or Outline effect to a UI element",
+            TracksWorkflow = true
+        )]
         public static object UIAddOutline(
-            string name = null, int instanceId = 0, string path = null,
+            string name = null,
+            int instanceId = 0,
+            string path = null,
             string effectType = "Outline",
-            float r = 0, float g = 0, float b = 0, float a = 0.5f,
-            float distanceX = 1, float distanceY = -1,
-            bool useGraphicAlpha = true)
+            float r = 0,
+            float g = 0,
+            float b = 0,
+            float a = 0.5f,
+            float distanceX = 1,
+            float distanceY = -1,
+            bool useGraphicAlpha = true
+        )
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
-            if (error != null) return error;
+            if (error != null)
+                return error;
 
             WorkflowManager.SnapshotObject(go);
             Undo.RecordObject(go, "Add Effect");
@@ -1423,27 +1988,55 @@ namespace UnitySkills
                 applied = "Outline";
             }
 
-            return new { success = true, name = go.name, effectType = applied, effectColor = $"({r},{g},{b},{a})", effectDistance = $"({distanceX},{distanceY})" };
+            return new
+            {
+                success = true,
+                name = go.name,
+                effectType = applied,
+                effectColor = $"({r},{g},{b},{a})",
+                effectDistance = $"({distanceX},{distanceY})",
+            };
         }
 
-        [UnitySkill("ui_configure_selectable", "Configure Selectable properties (transition, colors, navigation) on a UI element", TracksWorkflow = true)]
+        [UnitySkill(
+            "ui_configure_selectable",
+            "Configure Selectable properties (transition, colors, navigation) on a UI element",
+            TracksWorkflow = true
+        )]
         public static object UIConfigureSelectable(
-            string name = null, int instanceId = 0, string path = null,
+            string name = null,
+            int instanceId = 0,
+            string path = null,
             string transition = null,
             bool? interactable = null,
             string navigationMode = null,
             // ColorBlock properties
-            float? normalR = null, float? normalG = null, float? normalB = null,
-            float? highlightedR = null, float? highlightedG = null, float? highlightedB = null,
-            float? pressedR = null, float? pressedG = null, float? pressedB = null,
-            float? disabledR = null, float? disabledG = null, float? disabledB = null,
-            float? colorMultiplier = null, float? fadeDuration = null)
+            float? normalR = null,
+            float? normalG = null,
+            float? normalB = null,
+            float? highlightedR = null,
+            float? highlightedG = null,
+            float? highlightedB = null,
+            float? pressedR = null,
+            float? pressedG = null,
+            float? pressedB = null,
+            float? disabledR = null,
+            float? disabledG = null,
+            float? disabledB = null,
+            float? colorMultiplier = null,
+            float? fadeDuration = null
+        )
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
-            if (error != null) return error;
+            if (error != null)
+                return error;
 
             var selectable = go.GetComponent<Selectable>();
-            if (selectable == null) return new { error = "No Selectable component found (Button, Toggle, Slider, etc.)" };
+            if (selectable == null)
+                return new
+                {
+                    error = "No Selectable component found (Button, Toggle, Slider, etc.)",
+                };
 
             WorkflowManager.SnapshotObject(selectable);
             Undo.RecordObject(selectable, "Configure Selectable");
@@ -1451,7 +2044,10 @@ namespace UnitySkills
             if (interactable.HasValue)
                 selectable.interactable = interactable.Value;
 
-            if (!string.IsNullOrEmpty(transition) && Enum.TryParse<Selectable.Transition>(transition, true, out var trans))
+            if (
+                !string.IsNullOrEmpty(transition)
+                && Enum.TryParse<Selectable.Transition>(transition, true, out var trans)
+            )
                 selectable.transition = trans;
 
             if (!string.IsNullOrEmpty(navigationMode))
@@ -1465,18 +2061,40 @@ namespace UnitySkills
             }
 
             // Update colors if any color param is provided
-            if (normalR.HasValue || highlightedR.HasValue || pressedR.HasValue || disabledR.HasValue ||
-                colorMultiplier.HasValue || fadeDuration.HasValue)
+            if (
+                normalR.HasValue
+                || highlightedR.HasValue
+                || pressedR.HasValue
+                || disabledR.HasValue
+                || colorMultiplier.HasValue
+                || fadeDuration.HasValue
+            )
             {
                 var colors = selectable.colors;
                 if (normalR.HasValue || normalG.HasValue || normalB.HasValue)
-                    colors.normalColor = new Color(normalR ?? colors.normalColor.r, normalG ?? colors.normalColor.g, normalB ?? colors.normalColor.b);
+                    colors.normalColor = new Color(
+                        normalR ?? colors.normalColor.r,
+                        normalG ?? colors.normalColor.g,
+                        normalB ?? colors.normalColor.b
+                    );
                 if (highlightedR.HasValue || highlightedG.HasValue || highlightedB.HasValue)
-                    colors.highlightedColor = new Color(highlightedR ?? colors.highlightedColor.r, highlightedG ?? colors.highlightedColor.g, highlightedB ?? colors.highlightedColor.b);
+                    colors.highlightedColor = new Color(
+                        highlightedR ?? colors.highlightedColor.r,
+                        highlightedG ?? colors.highlightedColor.g,
+                        highlightedB ?? colors.highlightedColor.b
+                    );
                 if (pressedR.HasValue || pressedG.HasValue || pressedB.HasValue)
-                    colors.pressedColor = new Color(pressedR ?? colors.pressedColor.r, pressedG ?? colors.pressedColor.g, pressedB ?? colors.pressedColor.b);
+                    colors.pressedColor = new Color(
+                        pressedR ?? colors.pressedColor.r,
+                        pressedG ?? colors.pressedColor.g,
+                        pressedB ?? colors.pressedColor.b
+                    );
                 if (disabledR.HasValue || disabledG.HasValue || disabledB.HasValue)
-                    colors.disabledColor = new Color(disabledR ?? colors.disabledColor.r, disabledG ?? colors.disabledColor.g, disabledB ?? colors.disabledColor.b);
+                    colors.disabledColor = new Color(
+                        disabledR ?? colors.disabledColor.r,
+                        disabledG ?? colors.disabledColor.g,
+                        disabledB ?? colors.disabledColor.b
+                    );
                 if (colorMultiplier.HasValue)
                     colors.colorMultiplier = colorMultiplier.Value;
                 if (fadeDuration.HasValue)
@@ -1486,10 +2104,126 @@ namespace UnitySkills
 
             return new
             {
-                success = true, name = go.name,
+                success = true,
+                name = go.name,
                 transition = selectable.transition.ToString(),
                 interactable = selectable.interactable,
-                navigationMode = selectable.navigation.mode.ToString()
+                navigationMode = selectable.navigation.mode.ToString(),
+            };
+        }
+
+        // ==================================================================================
+        // Interaction Simulation
+
+        [UnitySkill(
+            "ui_simulate_click",
+            "Simulate a Button click by invoking its onClick event. Works in Play Mode and Edit Mode. Use path= for exact hierarchy match (e.g. 'GameCanvas/OverlayCanvas/ReactionBar/GGButton'). Returns error if button is not interactable."
+        )]
+        public static object UISimulateClick(
+            string name = null,
+            int instanceId = 0,
+            string path = null
+        )
+        {
+            var (go, findErr) = GameObjectFinder.FindOrError(
+                name: name,
+                instanceId: instanceId,
+                path: path
+            );
+            if (findErr != null)
+                return findErr;
+
+            // Accept the GO itself or find Button on children (e.g. path points to a container)
+            var button =
+                go.GetComponent<Button>()
+                ?? go.GetComponentInChildren<Button>(includeInactive: false);
+            if (button == null)
+                return new
+                {
+                    error = $"No active Button component on '{GameObjectFinder.GetPath(go)}' or its children",
+                };
+
+            if (!button.interactable)
+                return new
+                {
+                    error = $"Button is not interactable",
+                    buttonPath = GameObjectFinder.GetPath(button.gameObject),
+                    interactable = false,
+                };
+
+            button.onClick.Invoke();
+
+            // Read label text (TMP or legacy) for confirmation
+            string label = null;
+            if (IsTMPAvailable())
+            {
+                var tmp = button.GetComponentInChildren(_tmpTextType);
+                if (tmp != null)
+                    label = _tmpTextType.GetProperty("text")?.GetValue(tmp) as string;
+            }
+            if (label == null)
+            {
+                var legacyText = button.GetComponentInChildren<Text>();
+                if (legacyText != null)
+                    label = legacyText.text;
+            }
+
+            return new
+            {
+                success = true,
+                clicked = button.gameObject.name,
+                buttonPath = GameObjectFinder.GetPath(button.gameObject),
+                label,
+                interactable = button.interactable,
+            };
+        }
+
+        [UnitySkill(
+            "ui_get_button_state",
+            "Get the current state of a Button: interactable flag and label text. Useful after ui_simulate_click to verify cooldown applied."
+        )]
+        public static object UIGetButtonState(
+            string name = null,
+            int instanceId = 0,
+            string path = null
+        )
+        {
+            var (go, findErr) = GameObjectFinder.FindOrError(
+                name: name,
+                instanceId: instanceId,
+                path: path
+            );
+            if (findErr != null)
+                return findErr;
+
+            var button =
+                go.GetComponent<Button>()
+                ?? go.GetComponentInChildren<Button>(includeInactive: false);
+            if (button == null)
+                return new { error = $"No Button component on '{GameObjectFinder.GetPath(go)}'" };
+
+            string label = null;
+            if (IsTMPAvailable())
+            {
+                var tmp = button.GetComponentInChildren(_tmpTextType);
+                if (tmp != null)
+                    label = _tmpTextType.GetProperty("text")?.GetValue(tmp) as string;
+            }
+            if (label == null)
+            {
+                var legacyText = button.GetComponentInChildren<Text>();
+                if (legacyText != null)
+                    label = legacyText.text;
+            }
+
+            return new
+            {
+                success = true,
+                name = button.gameObject.name,
+                buttonPath = GameObjectFinder.GetPath(button.gameObject),
+                interactable = button.interactable,
+                label,
+                active = button.gameObject.activeInHierarchy,
             };
         }
     }

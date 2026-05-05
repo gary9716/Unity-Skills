@@ -1,7 +1,7 @@
-using UnityEngine;
+using System.Linq;
 using UnityEditor;
 using UnityEditorInternal;
-using System.Linq;
+using UnityEngine;
 
 namespace UnitySkills
 {
@@ -10,7 +10,10 @@ namespace UnitySkills
     /// </summary>
     public static class EditorSkills
     {
-        [UnitySkill("editor_play", "Enter play mode. Warning: any unsaved scene changes made during Play mode will be lost when exiting.")]
+        [UnitySkill(
+            "editor_play",
+            "Enter play mode. Warning: any unsaved scene changes made during Play mode will be lost when exiting."
+        )]
         public static object EditorPlay()
         {
             if (EditorApplication.isPlaying)
@@ -20,7 +23,10 @@ namespace UnitySkills
             return new { success = true, mode = "playing" };
         }
 
-        [UnitySkill("editor_stop", "Exit play mode. Warning: any scene changes made during Play mode will be lost.")]
+        [UnitySkill(
+            "editor_stop",
+            "Exit play mode. Warning: any scene changes made during Play mode will be lost."
+        )]
         public static object EditorStop()
         {
             if (!EditorApplication.isPlaying)
@@ -38,10 +44,19 @@ namespace UnitySkills
         }
 
         [UnitySkill("editor_select", "Select a GameObject")]
-        public static object EditorSelect(string name = null, int instanceId = 0, string path = null)
+        public static object EditorSelect(
+            string name = null,
+            int instanceId = 0,
+            string path = null
+        )
         {
-            var (go, findErr) = GameObjectFinder.FindOrError(name: name, instanceId: instanceId, path: path);
-            if (findErr != null) return findErr;
+            var (go, findErr) = GameObjectFinder.FindOrError(
+                name: name,
+                instanceId: instanceId,
+                path: path
+            );
+            if (findErr != null)
+                return findErr;
 
             Selection.activeGameObject = go;
             EditorGUIUtility.PingObject(go);
@@ -52,23 +67,27 @@ namespace UnitySkills
         [UnitySkill("editor_get_selection", "Get currently selected objects")]
         public static object EditorGetSelection()
         {
-            var selected = Selection.gameObjects.Select(go => new
-            {
-                name = go.name,
-                instanceId = go.GetInstanceID()
-            }).ToArray();
+            var selected = Selection
+                .gameObjects.Select(go => new { name = go.name, instanceId = go.GetInstanceID() })
+                .ToArray();
 
             return new { count = selected.Length, objects = selected };
         }
 
-        [UnitySkill("editor_undo", "Undo the last action (single step). For multiple undo steps use history_undo(steps=N). For workflow-level undo use workflow_undo_task.")]
+        [UnitySkill(
+            "editor_undo",
+            "Undo the last action (single step). For multiple undo steps use history_undo(steps=N). For workflow-level undo use workflow_undo_task."
+        )]
         public static object EditorUndo()
         {
             Undo.PerformUndo();
             return new { success = true, message = "Undo performed" };
         }
 
-        [UnitySkill("editor_redo", "Redo the last undone action (single step). For multiple redo steps use history_redo(steps=N).")]
+        [UnitySkill(
+            "editor_redo",
+            "Redo the last undone action (single step). For multiple redo steps use history_redo(steps=N)."
+        )]
         public static object EditorRedo()
         {
             Undo.PerformRedo();
@@ -85,7 +104,7 @@ namespace UnitySkills
                 isCompiling = EditorApplication.isCompiling,
                 timeSinceStartup = EditorApplication.timeSinceStartup,
                 unityVersion = Application.unityVersion,
-                platform = Application.platform.ToString()
+                platform = Application.platform.ToString(),
             };
         }
 
@@ -108,7 +127,8 @@ namespace UnitySkills
         [UnitySkill("editor_get_layers", "Get all available layers")]
         public static object EditorGetLayers()
         {
-            var layers = Enumerable.Range(0, 32)
+            var layers = Enumerable
+                .Range(0, 32)
                 .Select(i => new { index = i, name = LayerMask.LayerToName(i) })
                 .Where(l => !string.IsNullOrEmpty(l.name))
                 .ToArray();
@@ -116,56 +136,104 @@ namespace UnitySkills
             return new { layers };
         }
 
-        [UnitySkill("editor_get_context", "Get full editor context - selected GameObjects, selected assets, active scene, focused window. Use this to get current selection without searching.")]
-        public static object EditorGetContext(bool includeComponents = false, bool includeChildren = false)
+        [UnitySkill(
+            "editor_wait_for_state",
+            "Block until the editor reaches the target play state (isPlaying=true/false) and is no longer compiling. Polls every 150 ms up to maxWaitSeconds (default 15). Returns immediately if already in target state. Safe to call right after editor_play/editor_stop."
+        )]
+        public static object EditorWaitForState(bool isPlaying = true, int maxWaitSeconds = 15)
+        {
+            var deadline = System.DateTime.UtcNow.AddSeconds(maxWaitSeconds);
+            int polls = 0;
+            while (System.DateTime.UtcNow < deadline)
+            {
+                bool stateMatches = EditorApplication.isPlaying == isPlaying;
+                bool stable = !EditorApplication.isCompiling && !EditorApplication.isUpdating;
+                if (stateMatches && stable)
+                    return new
+                    {
+                        success = true,
+                        isPlaying = EditorApplication.isPlaying,
+                        polls,
+                    };
+                System.Threading.Thread.Sleep(150);
+                polls++;
+            }
+            return new
+            {
+                success = false,
+                error = $"Timeout after {maxWaitSeconds}s waiting for isPlaying={isPlaying}",
+                isPlaying = EditorApplication.isPlaying,
+                isCompiling = EditorApplication.isCompiling,
+                polls,
+            };
+        }
+
+        [UnitySkill(
+            "editor_get_context",
+            "Get full editor context - selected GameObjects, selected assets, active scene, focused window. Use this to get current selection without searching."
+        )]
+        public static object EditorGetContext(
+            bool includeComponents = false,
+            bool includeChildren = false
+        )
         {
             // 1. Hierarchy 选中的 GameObjects
-            var selectedGameObjects = Selection.gameObjects.Select(go =>
-            {
-                var info = new System.Collections.Generic.Dictionary<string, object>
+            var selectedGameObjects = Selection
+                .gameObjects.Select(go =>
                 {
-                    ["name"] = go.name,
-                    ["instanceId"] = go.GetInstanceID(),
-                    ["path"] = GameObjectFinder.GetPath(go),
-                    ["tag"] = go.tag,
-                    ["layer"] = LayerMask.LayerToName(go.layer),
-                    ["isActive"] = go.activeSelf
-                };
-
-                if (includeComponents)
-                {
-                    info["components"] = go.GetComponents<Component>()
-                        .Where(c => c != null)
-                        .Select(c => c.GetType().Name)
-                        .ToArray();
-                }
-
-                if (includeChildren && go.transform.childCount > 0)
-                {
-                    var children = new System.Collections.Generic.List<object>();
-                    foreach (Transform child in go.transform)
+                    var info = new System.Collections.Generic.Dictionary<string, object>
                     {
-                        children.Add(new { name = child.name, instanceId = child.gameObject.GetInstanceID() });
-                    }
-                    info["children"] = children;
-                }
+                        ["name"] = go.name,
+                        ["instanceId"] = go.GetInstanceID(),
+                        ["path"] = GameObjectFinder.GetPath(go),
+                        ["tag"] = go.tag,
+                        ["layer"] = LayerMask.LayerToName(go.layer),
+                        ["isActive"] = go.activeSelf,
+                    };
 
-                return info;
-            }).ToArray();
+                    if (includeComponents)
+                    {
+                        info["components"] = go.GetComponents<Component>()
+                            .Where(c => c != null)
+                            .Select(c => c.GetType().Name)
+                            .ToArray();
+                    }
+
+                    if (includeChildren && go.transform.childCount > 0)
+                    {
+                        var children = new System.Collections.Generic.List<object>();
+                        foreach (Transform child in go.transform)
+                        {
+                            children.Add(
+                                new
+                                {
+                                    name = child.name,
+                                    instanceId = child.gameObject.GetInstanceID(),
+                                }
+                            );
+                        }
+                        info["children"] = children;
+                    }
+
+                    return info;
+                })
+                .ToArray();
 
             // 2. Project 窗口选中的资源 (通过 GUID)
-            var selectedAssets = Selection.assetGUIDs.Select(guid =>
-            {
-                var path = AssetDatabase.GUIDToAssetPath(guid);
-                var assetType = AssetDatabase.GetMainAssetTypeAtPath(path);
-                return new
+            var selectedAssets = Selection
+                .assetGUIDs.Select(guid =>
                 {
-                    guid,
-                    path,
-                    type = assetType?.Name ?? "Unknown",
-                    isFolder = AssetDatabase.IsValidFolder(path)
-                };
-            }).ToArray();
+                    var path = AssetDatabase.GUIDToAssetPath(guid);
+                    var assetType = AssetDatabase.GetMainAssetTypeAtPath(path);
+                    return new
+                    {
+                        guid,
+                        path,
+                        type = assetType?.Name ?? "Unknown",
+                        isFolder = AssetDatabase.IsValidFolder(path),
+                    };
+                })
+                .ToArray();
 
             // 3. 当前活动场景
             var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
@@ -179,24 +247,19 @@ namespace UnitySkills
                 selectedGameObjects = new
                 {
                     count = selectedGameObjects.Length,
-                    objects = selectedGameObjects
+                    objects = selectedGameObjects,
                 },
-                selectedAssets = new
-                {
-                    count = selectedAssets.Length,
-                    assets = selectedAssets
-                },
+                selectedAssets = new { count = selectedAssets.Length, assets = selectedAssets },
                 activeScene = new
                 {
                     name = activeScene.name,
                     path = activeScene.path,
-                    isDirty = activeScene.isDirty
+                    isDirty = activeScene.isDirty,
                 },
                 focusedWindow = focusedWindow?.GetType().Name ?? "None",
                 isPlaying = EditorApplication.isPlaying,
-                isCompiling = EditorApplication.isCompiling
+                isCompiling = EditorApplication.isCompiling,
             };
         }
-
     }
 }
