@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
-using Newtonsoft.Json.Linq;
 
 namespace UnitySkills
 {
@@ -22,9 +22,9 @@ namespace UnitySkills
             if (!_tmpChecked)
             {
                 _tmpChecked = true;
-                _tmpTextType       = Type.GetType("TMPro.TextMeshProUGUI, Unity.TextMeshPro");
+                _tmpTextType = Type.GetType("TMPro.TextMeshProUGUI, Unity.TextMeshPro");
                 _tmpInputFieldType = Type.GetType("TMPro.TMP_InputField, Unity.TextMeshPro");
-                _tmpDropdownType   = Type.GetType("TMPro.TMP_Dropdown, Unity.TextMeshPro");
+                _tmpDropdownType = Type.GetType("TMPro.TMP_Dropdown, Unity.TextMeshPro");
                 _tmpAvailable = _tmpTextType != null;
             }
             return _tmpAvailable;
@@ -32,8 +32,13 @@ namespace UnitySkills
 
         // ─── Shared Helpers ─────────────────────────────────────────────────
 
-        private static void SetStretch(RectTransform rt,
-            float left = 0, float right = 0, float top = 0, float bottom = 0)
+        private static void SetStretch(
+            RectTransform rt,
+            float left = 0,
+            float right = 0,
+            float top = 0,
+            float bottom = 0
+        )
         {
             rt.anchorMin = Vector2.zero;
             rt.anchorMax = Vector2.one;
@@ -41,8 +46,13 @@ namespace UnitySkills
             rt.offsetMax = new Vector2(-right, -top);
         }
 
-        private static void SetCenterAnchor(RectTransform rt,
-            float width, float height, float x = 0, float y = 0)
+        private static void SetCenterAnchor(
+            RectTransform rt,
+            float width,
+            float height,
+            float x = 0,
+            float y = 0
+        )
         {
             rt.anchorMin = new Vector2(0.5f, 0.5f);
             rt.anchorMax = new Vector2(0.5f, 0.5f);
@@ -92,10 +102,12 @@ namespace UnitySkills
             if (!string.IsNullOrEmpty(parentName))
             {
                 var found = GameObject.Find(parentName);
-                if (found != null) return found;
+                if (found != null)
+                    return found;
             }
-            var canvas = Object.FindObjectOfType<Canvas>();
-            if (canvas != null) return canvas.gameObject;
+            var canvas = UnityEngine.Object.FindObjectOfType<Canvas>();
+            if (canvas != null)
+                return canvas.gameObject;
 
             var go = new GameObject("Canvas", typeof(RectTransform));
             go.AddComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
@@ -106,8 +118,12 @@ namespace UnitySkills
         }
 
         // TMP-aware text. Returns TextMeshProUGUI when TMP present, else UnityEngine.UI.Text.
-        private static Component AddText(GameObject go, string text, int fontSize = 14,
-            TextAnchor alignment = TextAnchor.MiddleLeft)
+        private static Component AddText(
+            GameObject go,
+            string text,
+            int fontSize = 14,
+            TextAnchor alignment = TextAnchor.MiddleLeft
+        )
         {
             if (IsTMPAvailable())
             {
@@ -126,28 +142,41 @@ namespace UnitySkills
             // TextAlignmentOptions: Horizontal bits (Left=1,Center=2,Right=4) | Vertical bits (Top=256,Middle=512,Bottom=1024)
             switch (anchor)
             {
-                case TextAnchor.MiddleCenter: return 514;
-                case TextAnchor.UpperCenter:  return 258;
-                case TextAnchor.LowerCenter:  return 1026;
-                default:                      return 513; // MiddleLeft
+                case TextAnchor.MiddleCenter:
+                    return 514;
+                case TextAnchor.UpperCenter:
+                    return 258;
+                case TextAnchor.LowerCenter:
+                    return 1026;
+                default:
+                    return 513; // MiddleLeft
             }
         }
 
-        private static Text AddLegacyText(GameObject go, string text, int fontSize = 14,
-            TextAnchor alignment = TextAnchor.MiddleLeft)
+        private static Text AddLegacyText(
+            GameObject go,
+            string text,
+            int fontSize = 14,
+            TextAnchor alignment = TextAnchor.MiddleLeft
+        )
         {
             var t = go.AddComponent<Text>();
             t.text = text;
             t.fontSize = fontSize;
             t.color = Color.black;
             t.alignment = alignment;
-            t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
-                     ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+            t.font =
+                Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
+                ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
             return t;
         }
 
         // Adds TMP_InputField or legacy InputField (with children) to inputGo.
-        private static void BuildInputField(GameObject inputGo, string fieldType, string placeholder)
+        private static void BuildInputField(
+            GameObject inputGo,
+            string fieldType,
+            string placeholder
+        )
         {
             if (IsTMPAvailable())
             {
@@ -170,7 +199,9 @@ namespace UnitySkills
                 var phComp = phGo.AddComponent(_tmpTextType);
                 _tmpTextType.GetProperty("text")?.SetValue(phComp, placeholder);
                 _tmpTextType.GetProperty("fontSize")?.SetValue(phComp, 13f);
-                _tmpTextType.GetProperty("color")?.SetValue(phComp, new Color(0.5f, 0.5f, 0.5f, 1f));
+                _tmpTextType
+                    .GetProperty("color")
+                    ?.SetValue(phComp, new Color(0.5f, 0.5f, 0.5f, 1f));
 
                 var textGo = new GameObject("Text", typeof(RectTransform));
                 textGo.transform.SetParent(textAreaGo.transform, false);
@@ -229,21 +260,28 @@ namespace UnitySkills
                 Undo.RegisterCreatedObjectUndo(captionGo, "Create Caption");
                 SetStretch(captionGo.GetComponent<RectTransform>(), 10, 30, 4, 4);
                 var captionComp = captionGo.AddComponent(_tmpTextType);
-                _tmpTextType.GetProperty("text")?.SetValue(captionComp, options.Length > 0 ? options[0] : "");
+                _tmpTextType
+                    .GetProperty("text")
+                    ?.SetValue(captionComp, options.Length > 0 ? options[0] : "");
                 _tmpTextType.GetProperty("fontSize")?.SetValue(captionComp, 13f);
                 _tmpDropdownType.GetProperty("captionText")?.SetValue(dropdown, captionComp);
 
                 BuildDropdownArrow(dropGo);
 
-                var optionDataType = Type.GetType("TMPro.TMP_Dropdown+OptionData, Unity.TextMeshPro");
+                var optionDataType = Type.GetType(
+                    "TMPro.TMP_Dropdown+OptionData, Unity.TextMeshPro"
+                );
                 if (optionDataType != null)
                 {
                     var listType = typeof(List<>).MakeGenericType(optionDataType);
-                    var optList  = Activator.CreateInstance(listType);
+                    var optList = Activator.CreateInstance(listType);
                     var addMethod = listType.GetMethod("Add");
                     foreach (var opt in options)
                     {
-                        var optData = Activator.CreateInstance(optionDataType, new object[] { opt });
+                        var optData = Activator.CreateInstance(
+                            optionDataType,
+                            new object[] { opt }
+                        );
                         addMethod.Invoke(optList, new[] { optData });
                     }
                     _tmpDropdownType.GetProperty("options")?.SetValue(dropdown, optList);
@@ -257,7 +295,11 @@ namespace UnitySkills
                 captionGo.transform.SetParent(dropGo.transform, false);
                 Undo.RegisterCreatedObjectUndo(captionGo, "Create Caption");
                 SetStretch(captionGo.GetComponent<RectTransform>(), 10, 30, 4, 4);
-                dropdown.captionText = AddLegacyText(captionGo, options.Length > 0 ? options[0] : "", 13);
+                dropdown.captionText = AddLegacyText(
+                    captionGo,
+                    options.Length > 0 ? options[0] : "",
+                    13
+                );
 
                 BuildDropdownArrow(dropGo);
 
@@ -282,17 +324,27 @@ namespace UnitySkills
             arrow.AddComponent<Image>().color = new Color(0.3f, 0.3f, 0.3f, 1f);
         }
 
-        private static object BuildResult(string rootName, string contentPath,
-            Dictionary<string, object> named)
+        private static object BuildResult(
+            string rootName,
+            string contentPath,
+            Dictionary<string, object> named
+        )
         {
-            return new { root = rootName, content = contentPath, named_objects = named };
+            return new
+            {
+                root = rootName,
+                content = contentPath,
+                named_objects = named,
+            };
         }
 
         // ─── ugui_build_scrolllist ───────────────────────────────────────────
 
-        [UnitySkill("ugui_build_scrolllist",
+        [UnitySkill(
+            "ugui_build_scrolllist",
             "Build a complete scrollable list: ScrollRect > Viewport(RectMask2D) > Content(VLG+ContentSizeFitter)",
-            TracksWorkflow = true)]
+            TracksWorkflow = true
+        )]
         public static object UGUIBuildScrollList(
             string name = "ScrollList",
             string parent = null,
@@ -302,7 +354,8 @@ namespace UnitySkills
             float height = 600f,
             float x = 0f,
             float y = 0f,
-            bool showScrollbar = true)
+            bool showScrollbar = true
+        )
         {
             var parentGo = FindOrCreateCanvas(parent);
 
@@ -341,7 +394,7 @@ namespace UnitySkills
             var named = new Dictionary<string, object>
             {
                 { "viewport", $"{name}/Viewport" },
-                { "content",  $"{name}/Viewport/Content" }
+                { "content", $"{name}/Viewport/Content" },
             };
 
             if (showScrollbar)
@@ -355,7 +408,7 @@ namespace UnitySkills
                 var sbRt = sbGo.GetComponent<RectTransform>();
                 sbRt.anchorMin = new Vector2(1, 0);
                 sbRt.anchorMax = new Vector2(1, 1);
-                sbRt.pivot     = new Vector2(1, 0.5f);
+                sbRt.pivot = new Vector2(1, 0.5f);
                 sbRt.sizeDelta = new Vector2(20, 0);
                 sbRt.anchoredPosition = Vector2.zero;
 
@@ -372,8 +425,9 @@ namespace UnitySkills
                 sb.handleRect = handle.GetComponent<RectTransform>();
 
                 scrollRect.verticalScrollbar = sb;
-                scrollRect.verticalScrollbarVisibility =
-                    ScrollRect.ScrollbarVisibility.AutoHideAndExpandViewport;
+                scrollRect.verticalScrollbarVisibility = ScrollRect
+                    .ScrollbarVisibility
+                    .AutoHideAndExpandViewport;
 
                 viewport.GetComponent<RectTransform>().offsetMax = new Vector2(-20, 0);
                 named["scrollbar"] = $"{name}/Scrollbar";
@@ -384,7 +438,7 @@ namespace UnitySkills
                 var itemArray = JArray.Parse(items);
                 foreach (var itemToken in itemArray)
                 {
-                    var itemId   = itemToken["id"]?.ToString() ?? "Item";
+                    var itemId = itemToken["id"]?.ToString() ?? "Item";
                     var itemText = itemToken["text"]?.ToString() ?? "";
                     var itemGo = new GameObject(itemId, typeof(RectTransform));
                     itemGo.transform.SetParent(content.transform, false);
@@ -407,9 +461,11 @@ namespace UnitySkills
 
         // ─── ugui_build_form ─────────────────────────────────────────────────
 
-        [UnitySkill("ugui_build_form",
+        [UnitySkill(
+            "ugui_build_form",
             "Build a form: VLG+ContentSizeFitter root, HLG rows. Field types: text, password, number, dropdown (with options:[]), toggle. Height auto-sized.",
-            TracksWorkflow = true)]
+            TracksWorkflow = true
+        )]
         public static object UGUIBuildForm(
             string name = "Form",
             string parent = null,
@@ -417,7 +473,8 @@ namespace UnitySkills
             string submitLabel = "Submit",
             float width = 360f,
             float x = 0f,
-            float y = 0f)
+            float y = 0f
+        )
         {
             var parentGo = FindOrCreateCanvas(parent);
 
@@ -448,8 +505,8 @@ namespace UnitySkills
                 var fieldArray = JArray.Parse(fields);
                 foreach (var f in fieldArray)
                 {
-                    var fieldType   = f["type"]?.ToString() ?? "text";
-                    var fieldLabel  = f["label"]?.ToString() ?? "Field";
+                    var fieldType = f["type"]?.ToString() ?? "text";
+                    var fieldLabel = f["label"]?.ToString() ?? "Field";
                     var placeholder = f["placeholder"]?.ToString() ?? "";
 
                     var rowGo = new GameObject($"Field_{fieldLabel}", typeof(RectTransform));
@@ -483,7 +540,8 @@ namespace UnitySkills
                         dropGo.AddComponent<Image>().color = Color.white;
                         dropGo.AddComponent<LayoutElement>().flexibleWidth = 1;
                         var optTokens = f["options"] as JArray;
-                        var opts = optTokens != null ? optTokens.ToObject<string[]>() : new string[0];
+                        var opts =
+                            optTokens != null ? optTokens.ToObject<string[]>() : new string[0];
                         BuildDropdown(dropGo, opts);
                     }
                     else if (fieldType == "toggle")
@@ -550,9 +608,11 @@ namespace UnitySkills
 
         // ─── ugui_build_modal ────────────────────────────────────────────────
 
-        [UnitySkill("ugui_build_modal",
+        [UnitySkill(
+            "ugui_build_modal",
             "Build an inactive modal dialog with optional overlay. Call gameobject_set_active to show.",
-            TracksWorkflow = true)]
+            TracksWorkflow = true
+        )]
         public static object UGUIBuildModal(
             string name = "Modal",
             string parent = null,
@@ -561,7 +621,8 @@ namespace UnitySkills
             string buttons = null,
             float width = 400f,
             float height = 220f,
-            bool showOverlay = true)
+            bool showOverlay = true
+        )
         {
             var parentGo = FindOrCreateCanvas(parent);
             var named = new Dictionary<string, object>();
@@ -660,9 +721,11 @@ namespace UnitySkills
 
         // ─── ugui_build_tabview ──────────────────────────────────────────────
 
-        [UnitySkill("ugui_build_tabview",
+        [UnitySkill(
+            "ugui_build_tabview",
             "Build tabbed UI: TabBar(HLG+ToggleGroup) + ContentArea with one panel per tab. First tab active.",
-            TracksWorkflow = true)]
+            TracksWorkflow = true
+        )]
         public static object UGUIBuildTabView(
             string name = "TabView",
             string parent = null,
@@ -671,7 +734,8 @@ namespace UnitySkills
             float width = 600f,
             float height = 400f,
             float x = 0f,
-            float y = 0f)
+            float y = 0f
+        )
         {
             var parentGo = FindOrCreateCanvas(parent);
             var named = new Dictionary<string, object>();
@@ -719,7 +783,7 @@ namespace UnitySkills
                     tabNames[i] = parsed[i].ToString();
             }
 
-            var tabPaths   = new Dictionary<string, string>();
+            var tabPaths = new Dictionary<string, string>();
             var panelPaths = new Dictionary<string, string>();
 
             for (int i = 0; i < tabNames.Length; i++)
@@ -729,9 +793,8 @@ namespace UnitySkills
                 var tabGo = new GameObject($"Tab_{tabName}", typeof(RectTransform));
                 tabGo.transform.SetParent(tabBar.transform, false);
                 Undo.RegisterCreatedObjectUndo(tabGo, "Create Tab");
-                tabGo.AddComponent<Image>().color = i == 0
-                    ? new Color(1, 1, 1, 1f)
-                    : new Color(0.7f, 0.7f, 0.7f, 1f);
+                tabGo.AddComponent<Image>().color =
+                    i == 0 ? new Color(1, 1, 1, 1f) : new Color(0.7f, 0.7f, 0.7f, 1f);
                 var toggle = tabGo.AddComponent<Toggle>();
                 toggle.group = toggleGroup;
                 toggle.isOn = i == 0;
@@ -752,7 +815,7 @@ namespace UnitySkills
                 panelPaths[tabName] = $"{name}/ContentArea/Panel_{tabName}";
             }
 
-            named["tabs"]   = tabPaths;
+            named["tabs"] = tabPaths;
             named["panels"] = panelPaths;
 
             EditorUtility.SetDirty(root);
@@ -761,15 +824,18 @@ namespace UnitySkills
 
         // ─── ugui_build_hud ──────────────────────────────────────────────────
 
-        [UnitySkill("ugui_build_hud",
+        [UnitySkill(
+            "ugui_build_hud",
             "Build a corner-anchored HUD container with VLG. Corner: top-left|top-right|bottom-left|bottom-right",
-            TracksWorkflow = true)]
+            TracksWorkflow = true
+        )]
         public static object UGUIBuildHUD(
             string name = "HUD",
             string parent = null,
             string corner = "top-left",
             string elements = null,
-            float padding = 20f)
+            float padding = 20f
+        )
         {
             var parentGo = FindOrCreateCanvas(parent);
             var named = new Dictionary<string, object>();
@@ -787,7 +853,7 @@ namespace UnitySkills
             vlg.spacing = 4;
             var csf = root.AddComponent<ContentSizeFitter>();
             csf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-            csf.verticalFit   = ContentSizeFitter.FitMode.PreferredSize;
+            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             var elementPaths = new Dictionary<string, string>();
 
@@ -813,7 +879,7 @@ namespace UnitySkills
                     {
                         var le = elGo.AddComponent<LayoutElement>();
                         le.preferredHeight = 20;
-                        le.preferredWidth  = 160;
+                        le.preferredWidth = 160;
                         elGo.AddComponent<Slider>();
                         elGo.AddComponent<Image>().color = new Color(0.3f, 0.7f, 0.3f, 1f);
                     }
@@ -821,14 +887,14 @@ namespace UnitySkills
                     {
                         var le = elGo.AddComponent<LayoutElement>();
                         le.preferredHeight = 40;
-                        le.preferredWidth  = 40;
+                        le.preferredWidth = 40;
                         elGo.AddComponent<Image>();
                     }
                     else // progressbar
                     {
                         var le = elGo.AddComponent<LayoutElement>();
                         le.preferredHeight = 16;
-                        le.preferredWidth  = 160;
+                        le.preferredWidth = 160;
                         elGo.AddComponent<Image>().color = new Color(0.2f, 0.6f, 1f, 1f);
                     }
 
@@ -844,9 +910,11 @@ namespace UnitySkills
 
         // ─── ugui_build_grid ─────────────────────────────────────────────────
 
-        [UnitySkill("ugui_build_grid",
+        [UnitySkill(
+            "ugui_build_grid",
             "Build a GridLayoutGroup with FixedColumnCount, optionally wrapped in ScrollRect.",
-            TracksWorkflow = true)]
+            TracksWorkflow = true
+        )]
         public static object UGUIBuildGrid(
             string name = "Grid",
             string parent = null,
@@ -858,7 +926,8 @@ namespace UnitySkills
             float width = 400f,
             float height = 480f,
             float x = 0f,
-            float y = 0f)
+            float y = 0f
+        )
         {
             var parentGo = FindOrCreateCanvas(parent);
             var named = new Dictionary<string, object>();
@@ -872,7 +941,7 @@ namespace UnitySkills
                 SetCenterAnchor(root.GetComponent<RectTransform>(), width, height, x, y);
                 var scrollRect = root.AddComponent<ScrollRect>();
                 scrollRect.horizontal = false;
-                scrollRect.vertical   = true;
+                scrollRect.vertical = true;
                 scrollRect.movementType = ScrollRect.MovementType.Elastic;
 
                 var viewport = new GameObject("Viewport", typeof(RectTransform));
@@ -887,18 +956,18 @@ namespace UnitySkills
                 Undo.RegisterCreatedObjectUndo(content, "Create Content");
                 SetTopStretch(content.GetComponent<RectTransform>());
                 var glg = content.AddComponent<GridLayoutGroup>();
-                glg.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
+                glg.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
                 glg.constraintCount = columns;
-                glg.cellSize        = new Vector2(cellWidth, cellHeight);
-                glg.spacing         = new Vector2(spacing, spacing);
+                glg.cellSize = new Vector2(cellWidth, cellHeight);
+                glg.spacing = new Vector2(spacing, spacing);
                 var csf = content.AddComponent<ContentSizeFitter>();
                 csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
                 scrollRect.viewport = viewport.GetComponent<RectTransform>();
-                scrollRect.content  = content.GetComponent<RectTransform>();
+                scrollRect.content = content.GetComponent<RectTransform>();
 
                 named["viewport"] = $"{name}/Viewport";
-                named["content"]  = $"{name}/Viewport/Content";
+                named["content"] = $"{name}/Viewport/Content";
 
                 EditorUtility.SetDirty(root);
                 return BuildResult(name, $"{name}/Viewport/Content", named);
@@ -915,10 +984,10 @@ namespace UnitySkills
                 Undo.RegisterCreatedObjectUndo(content, "Create Content");
                 SetStretch(content.GetComponent<RectTransform>());
                 var glg = content.AddComponent<GridLayoutGroup>();
-                glg.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
+                glg.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
                 glg.constraintCount = columns;
-                glg.cellSize        = new Vector2(cellWidth, cellHeight);
-                glg.spacing         = new Vector2(spacing, spacing);
+                glg.cellSize = new Vector2(cellWidth, cellHeight);
+                glg.spacing = new Vector2(spacing, spacing);
 
                 named["content"] = $"{name}/Content";
 
