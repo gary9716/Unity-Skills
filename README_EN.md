@@ -17,7 +17,7 @@
 
 <p align="center">
   🎉 We are now indexed by <b>DeepWiki</b>!<br>
-  Got questions? Check out the AI-generated docs → <a href="https://deepwiki.com/Besty0728/Unity-Skills"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
+  Got questions? Check out the AI-generated docs → <a href="https://deepwiki.com/gary9716/Unity-Skills"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 </p>
 
 > The current official maintenance baseline is **Unity 2022.3+**. Some Unity 2021 compatibility logic may still remain in the codebase, but future feature work, regression testing, and adaptation will focus on **2022.3+ / Unity 6**.
@@ -68,20 +68,20 @@ Add via Unity Package Manager using Git URL:
 
 **Stable Version (main)**:
 ```
-https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity
+https://github.com/gary9716/Unity-Skills.git?path=/SkillsForUnity
 ```
 
 **Beta Version (beta)**:
 ```
-https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity#beta
+https://github.com/gary9716/Unity-Skills.git?path=/SkillsForUnity#beta
 ```
 
 **Specific Version** (e.g., v1.6.0):
 ```
-https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity#v1.6.0
+https://github.com/gary9716/Unity-Skills.git?path=/SkillsForUnity#v1.6.0
 ```
 
-> 📦 All version packages are available on the [Releases](https://github.com/Besty0728/Unity-Skills/releases) page
+> 📦 All version packages are available on the [Releases](https://github.com/gary9716/Unity-Skills/releases) page
 
 ### 2. Start Server
 In Unity, click menu: `Window > UnitySkills > Start Server`
@@ -228,7 +228,7 @@ If you're using other tools that support Skills, install according to the Skills
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Besty0728/Unity-Skills&type=Date)](https://star-history.com/#Besty0728/Unity-Skills&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=gary9716/Unity-Skills&type=Date)](https://star-history.com/#gary9716/Unity-Skills&Date)
 
 ---
 

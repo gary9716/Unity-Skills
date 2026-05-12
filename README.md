@@ -18,7 +18,7 @@
 
 <p align="center">
   🎉 我们已被 <b>DeepWiki</b> 收录！<br>
-  有问题？查阅 AI 生成的项目文档 → <a href="https://deepwiki.com/Besty0728/Unity-Skills"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
+  有问题？查阅 AI 生成的项目文档 → <a href="https://deepwiki.com/gary9716/Unity-Skills"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 </p>
 
 > 当前官方维护基线为 **Unity 2022.3+**。仓库中仍可能保留部分对 Unity 2021 的兼容逻辑，但后续功能开发、回归验证与适配工作将以 **2022.3+ / Unity 6** 为主。
@@ -69,20 +69,20 @@
 
 **稳定版安装 (main)**:
 ```
-https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity
+https://github.com/gary9716/Unity-Skills.git?path=/SkillsForUnity
 ```
 
 **开发测试版安装 (beta)**:
 ```
-https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity#beta
+https://github.com/gary9716/Unity-Skills.git?path=/SkillsForUnity#beta
 ```
 
 **指定版本安装** (如 v1.6.0):
 ```
-https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity#v1.6.0
+https://github.com/gary9716/Unity-Skills.git?path=/SkillsForUnity#v1.6.0
 ```
 
-> 📦 所有版本包可在 [Releases](https://github.com/Besty0728/Unity-Skills/releases) 页面下载
+> 📦 所有版本包可在 [Releases](https://github.com/gary9716/Unity-Skills/releases) 页面下载
 
 ### 2. 启动服务
 在 Unity 中点击菜单：`Window > UnitySkills > Start Server`
@@ -229,7 +229,7 @@ https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity#v1.6.0
 
 ## ⭐ Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Besty0728/Unity-Skills&type=Date)](https://star-history.com/#Besty0728/Unity-Skills&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=gary9716/Unity-Skills&type=Date)](https://star-history.com/#gary9716/Unity-Skills&Date)
 
 ---
 
