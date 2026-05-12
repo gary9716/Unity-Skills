@@ -608,6 +608,79 @@ def _parse_cli_value(value: str) -> Any:
     return value
 
 # ============================================================
+# ugui-builder composite skills
+# ============================================================
+
+def ugui_build_scrolllist(name="ScrollList", parent=None, items=None,
+                          item_height=60, width=400, height=600,
+                          x=0, y=0, show_scrollbar=True):
+    """Build ScrollRect > Viewport(RectMask2D) > Content(VLG+CSF). Returns {root, content, named_objects}."""
+    return call_skill("ugui_build_scrolllist",
+                      name=name, parent=parent,
+                      items=items or [],
+                      itemHeight=float(item_height),
+                      width=float(width), height=float(height),
+                      x=float(x), y=float(y),
+                      showScrollbar=show_scrollbar)
+
+
+def ugui_build_form(name="Form", parent=None, fields=None,
+                    submit_label="Submit", width=360, x=0, y=0):
+    """Build VLG+CSF form with label+input rows. Field types: text, password, number, dropdown (options:[]), toggle.
+    Height auto-sized. Returns {root, content, named_objects}."""
+    return call_skill("ugui_build_form",
+                      name=name, parent=parent,
+                      fields=fields or [],
+                      submitLabel=submit_label,
+                      width=float(width), x=float(x), y=float(y))
+
+
+def ugui_build_modal(name="Modal", parent=None, title="Dialog", message="",
+                     buttons=None, width=400, height=220, show_overlay=True):
+    """Build inactive modal dialog. Caller SetActive(true) to show. Returns {root, named_objects}."""
+    return call_skill("ugui_build_modal",
+                      name=name, parent=parent,
+                      title=title, message=message,
+                      buttons=buttons or ["OK"],
+                      width=float(width), height=float(height),
+                      showOverlay=show_overlay)
+
+
+def ugui_build_tabview(name="TabView", parent=None, tabs=None,
+                       tab_height=40, width=600, height=400, x=0, y=0):
+    """Build TabBar(HLG+ToggleGroup) + ContentArea with panels. Returns {root, named_objects}."""
+    return call_skill("ugui_build_tabview",
+                      name=name, parent=parent,
+                      tabs=tabs or [],
+                      tabHeight=float(tab_height),
+                      width=float(width), height=float(height),
+                      x=float(x), y=float(y))
+
+
+def ugui_build_hud(name="HUD", parent=None, corner="top-left",
+                   elements=None, padding=20):
+    """Build corner-anchored HUD container with VLG. Returns {root, named_objects}."""
+    return call_skill("ugui_build_hud",
+                      name=name, parent=parent,
+                      corner=corner,
+                      elements=elements or [],
+                      padding=float(padding))
+
+
+def ugui_build_grid(name="Grid", parent=None, columns=3,
+                    cell_width=120, cell_height=120, spacing=8,
+                    scrollable=True, width=400, height=480, x=0, y=0):
+    """Build GridLayoutGroup(FixedColumnCount), optionally in ScrollRect. Returns {root, content, named_objects}."""
+    return call_skill("ugui_build_grid",
+                      name=name, parent=parent,
+                      columns=int(columns),
+                      cellWidth=float(cell_width), cellHeight=float(cell_height),
+                      spacing=float(spacing), scrollable=scrollable,
+                      width=float(width), height=float(height),
+                      x=float(x), y=float(y))
+
+
+# ============================================================
 # Main CLI Entry Point
 # ============================================================
 def main():
