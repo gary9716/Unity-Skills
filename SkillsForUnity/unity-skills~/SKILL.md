@@ -20,7 +20,7 @@ Current package snapshot:
 
 ```python
 import unity_skills
-unity_skills.set_unity_version("2022.3")
+unity_skills.set_unity_version("6")  # Accepted: "6", "Unity 6", "2022", "2022.3"
 ```
 
 2. When the task touches `2+` objects, prefer `*_batch` skills instead of looping single-item skills.
@@ -44,7 +44,7 @@ with unity_skills.workflow_context("build_scene", "Create player and camera"):
 Main helper file:
 
 ```text
-unity-skills/scripts/unity_skills.py
+unity-skills~/scripts/unity_skills.py
 ```
 
 Common helpers:
@@ -87,6 +87,8 @@ These modules are optional. Load them when the user asks for architecture guidan
 - `skills/inspector/SKILL.md`
 - `skills/scriptdesign/SKILL.md`
 
+Load multiple advisory modules when the task spans their concerns.
+
 Use them on demand. Do not default to giant architecture dumps, forced UniTask adoption, or a global event bus unless the project context clearly justifies it.
 
 ## Module Index
@@ -94,11 +96,11 @@ Use them on demand. Do not default to giant architecture dumps, forced UniTask a
 For module-by-module documentation, open:
 
 ```text
-unity-skills/skills/SKILL.md
+unity-skills~/skills/SKILL.md
 ```
 
 For script-specific guidance, open:
 
 ```text
-unity-skills/skills/script/SKILL.md
+unity-skills~/skills/script/SKILL.md
 ```

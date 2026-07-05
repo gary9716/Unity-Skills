@@ -20,7 +20,7 @@ This folder contains detailed documentation for each skill module. For quick ref
 | [prefab](./prefab/SKILL.md) | Prefab creation and instantiation | Yes (1 batch skill) |
 | [asset](./asset/SKILL.md) | Asset import, organize, search | Yes (3 batch skills) |
 | [ui](./ui/SKILL.md) | Canvas and UI element creation | Yes (1 batch skill) |
-| [uitoolkit](./uitoolkit/SKILL.md) | UI Toolkit UXML/USS/UIDocument | No |
+| [uitoolkit](./uitoolkit/SKILL.md) | UI Toolkit UXML/USS/UIDocument | Yes (1 batch skill) |
 | [script](./script/SKILL.md) | C# script creation and search | Yes (1 batch skill) |
 | [scene](./scene/SKILL.md) | Scene loading, saving, hierarchy | No |
 | [editor](./editor/SKILL.md) | Play mode, selection, undo/redo | No |
@@ -52,6 +52,7 @@ This folder contains detailed documentation for each skill module. For quick ref
 | [bookmark](./bookmark/SKILL.md) | Scene View bookmarks | No |
 | [history](./history/SKILL.md) | Undo/redo history | No |
 | [scriptableobject](./scriptableobject/SKILL.md) | ScriptableObject management | No |
+| [ugui-builder](./ugui-builder/SKILL.md) | UGUI composite builders (scrolllists, forms, modals, tab views, HUDs, grids) | No |
 
 ## Advisory Design Modules
 
@@ -75,7 +76,7 @@ These modules provide architecture and coding guidance. They are optional and sh
 
 ## Batch-First Rule
 
-> When operating on **2 or more objects**, ALWAYS use `*_batch` skills instead of calling single-object skills multiple times.
+> When operating on **2 or more objects**, prefer `*_batch` skills when the module provides one (see Batch Support column) instead of calling single-object skills multiple times.
 
 **Example - Creating 10 cubes:**
 
@@ -94,5 +95,5 @@ unity_skills.call_skill("gameobject_create_batch",
 
 - Unity REST skills: 490
 - Advisory design modules: 13
-- Core runtime modules: 38
-- Total documented module folders: 51
+- Core runtime modules: 40
+- Total documented module folders: 53

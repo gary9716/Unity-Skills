@@ -119,6 +119,7 @@ Unity-Skills/
 │           ├── UnitySkillAttribute.cs  # [UnitySkill] 特性定义
 │           ├── UnitySkillsWindow.cs    # 编辑器窗口 UI
 │           ├── SkillInstaller.cs       # AI 工具一键安装器
+│           ├── SkillsLogger.cs         # 统一版本常量源 (SkillsLogger.Version)
 │           ├── Localization.cs         # 中英双语 UI
 │           │
 │           ├── GameObjectSkills.cs     # GameObject 操作 (18 skills)
@@ -126,7 +127,7 @@ Unity-Skills/
 │           ├── SceneSkills.cs          # Scene 管理 (10 skills)
 │           ├── MaterialSkills.cs       # Material 操作 (21 skills)
 │           ├── CinemachineSkills.cs    # Cinemachine 3.x (23 skills)
-│           ├── WorkflowSkills.cs       # Workflow 撤销/回滚 (22 skills, 含 bookmark/history)
+│           ├── WorkflowSkills.cs       # Workflow 撤销/回滚 (22 skills; bookmark 见 skills/bookmark/, history 见 skills/history/)
 │           ├── UISkills.cs             # UI 元素创建 (26 skills)
 │           ├── UIToolkitSkills.cs      # UI Toolkit UXML/USS/UIDocument (25 skills)
 │           ├── AssetSkills.cs          # Asset 管理 (11 skills)
@@ -159,8 +160,10 @@ Unity-Skills/
 │           ├── ProfilerSkills.cs       # Profiler 性能分析 (10 skills)
 │           ├── PerceptionSkills.cs     # Perception 场景理解 (11 skills)
 │           ├── ProBuilderSkills.cs     # ProBuilder 建模 (22 skills, 需 com.unity.probuilder)
+│           ├── InteractSkills.cs       # Interact 交互测试 (Playwright-style, Play Mode)
+│           ├── UGUIBuilderSkills.cs     # UGUI 复合构建器 (scrolllist/form/modal/tabview/HUD/grid)
 │           ├── SampleSkills.cs         # 基础示例 (8 skills)
-│           └── ... (39 个 *Skills.cs 文件, 共 490 Skills)
+│           └── ... (41 个 *Skills.cs 文件, 共 490 Skills)
 │
 ├── docs/
 │   └── SETUP_GUIDE.md              # 完整安装使用指南
@@ -326,7 +329,7 @@ v1.5.0 对全部 38 个 C# 文件 + Python 客户端进行了完整审计，修�
 | **ProBuilder** | 22 | 形状创建/面拉伸/细分/倒角/面删除/面合并/面材质/法线翻转/网格信息/枢轴设置/批量创建/顶点移动/顶点设置/顶点查询/网格合并/整体材质/面分离/边拉伸/边桥接/法线统一/顶点焊接/UV投射（需 com.unity.probuilder） |
 | **Sample** | 8 | 基础示例：创建/删除/变换/场景信息 |
 
-> ⚠️ **重要提示**：大部分模块都支持 `*_batch` 批量操作，操作多个物体时应优先使用批量 Skills。
+> ⚠️ **重要提示**：部分模块支持 `*_batch` 批量操作（以模块索引 Batch Support 列为准），操作多个物体时应优先使用批量 Skills。
 
 ---
 
@@ -380,7 +383,7 @@ curl -X POST http://localhost:8090/skill/gameobject_create \
 result = unity_skills.call_skill('script_create', name='MyScript', template='MonoBehaviour')
 if result.get('success'):
     # 等待 Unity 重新编译完成
-    time.sleep(5)  # 或使用 wait_for_unity()
+    time.sleep(5)  # 或使用 unity_skills.wait_for_unity(...)
 ```
 
 ### 2. 线程安全
@@ -509,6 +512,7 @@ rg -n "1\.6\.3|2022\.3\+|490|15 分钟|15 minutes|SkillsLogger.Version|__version
 ### 同步方式
 
 ```bash
+# 前提：确认 beta 是预期的同步源且领先于 main；force-push 会覆盖 main 历史，不可逆
 git checkout main
 git reset --hard beta
 git push origin main --force

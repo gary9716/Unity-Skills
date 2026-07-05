@@ -7,21 +7,22 @@ description: "Playwright-style interaction testing for Unity. Simulate UGUI clic
 
 Simulate user interactions and query runtime state in Play Mode.
 
-> **Requires Play Mode**: All interact skills (except `interact_enter_playmode` and `interact_exit_playmode`) require the editor to be in Play Mode.
+> **Requires Play Mode**: All interact skills (except `interact_enter_playmode`, `interact_exit_playmode`, and `interact_snapshot_scene`) require the editor to be in Play Mode.
 
 ## Quick Start
 
 ```python
 # Enter Play Mode
 unity_skills.call_skill("interact_enter_playmode")
-unity_skills.call_skill("interact_wait_frames", frames=5)  # Wait for initialization
+wait = unity_skills.call_skill("interact_wait_frames", frames=5)  # Returns jobId
+unity_skills.call_skill("interact_get_wait_result", jobId=wait["jobId"])  # Poll until done
 
 # Simulate interaction
 unity_skills.call_skill("interact_click", name="AddScore")
 
 # Query state
 result = unity_skills.call_skill("interact_get_text", name="ScoreLabel")
-# result.text == "1" → AI judges test passed
+# result["text"] == "1" → test passed
 
 # Exit
 unity_skills.call_skill("interact_exit_playmode")
@@ -33,9 +34,9 @@ unity_skills.call_skill("interact_exit_playmode")
 |-------|-------------|
 | `interact_enter_playmode` | Enter Play Mode |
 | `interact_exit_playmode` | Exit Play Mode |
-| `interact_wait_frames` | Wait N frames (async, returns jobId) |
+| `interact_wait_frames` | Wait N frames (async, returns jobId — must poll via `interact_get_wait_result`) |
 | `interact_get_wait_result` | Poll wait_frames job status |
-| `interact_snapshot_scene` | Get scene state snapshot |
+| `interact_snapshot_scene` | Get scene state snapshot (Play Mode not required) |
 
 ## UGUI Interaction
 
@@ -83,13 +84,14 @@ unity_skills.call_skill("interact_exit_playmode")
 
 AI workflow for testing:
 
-```
-1. interact_enter_playmode()
-2. interact_wait_frames(5) → wait for scene init
-3. interact_click("ButtonName") → trigger action
-4. interact_get_text("ResultLabel") → read result
-5. AI compares result with expected value
-6. interact_exit_playmode()
+```python
+1. unity_skills.call_skill("interact_enter_playmode")
+2. wait = unity_skills.call_skill("interact_wait_frames", frames=5)
+   unity_skills.call_skill("interact_get_wait_result", jobId=wait["jobId"])  # poll until done
+3. unity_skills.call_skill("interact_click", name="ButtonName")
+4. result = unity_skills.call_skill("interact_get_text", name="ResultLabel")
+5. assert result["text"] == expected_value  # mismatch = test fail
+6. unity_skills.call_skill("interact_exit_playmode")
 ```
 
 ## Notes
